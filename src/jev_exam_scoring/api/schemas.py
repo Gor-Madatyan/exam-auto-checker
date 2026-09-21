@@ -9,7 +9,7 @@ from pydantic import BaseModel, Field
 if TYPE_CHECKING:
     from ..grading import GradedScore
 
-SnapModeParam = Literal["ceil", "nearest"]
+SnapModeParam = Literal["ceil", "nearest", "optimist"]
 
 
 class PointsRequest(BaseModel):

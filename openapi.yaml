@@ -427,6 +427,7 @@ components:
           enum:
           - ceil
           - nearest
+          - optimist
           title: Mode
           default: ceil
         student_code:
@@ -511,6 +512,7 @@ components:
           enum:
           - ceil
           - nearest
+          - optimist
           title: Mode
           default: ceil
         student_essay:
@@ -547,6 +549,7 @@ components:
           enum:
           - ceil
           - nearest
+          - optimist
           title: Mode
           default: ceil
         student_answer:
@@ -592,6 +595,7 @@ components:
           enum:
           - ceil
           - nearest
+          - optimist
           title: Mode
       type: object
       required:
@@ -681,6 +685,7 @@ components:
           enum:
           - ceil
           - nearest
+          - optimist
           title: Mode
           default: ceil
         student_pseudocode:

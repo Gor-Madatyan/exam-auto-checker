@@ -15,7 +15,9 @@ and then scaled to the task's point value::
 
 Example: a 5-point task where jev returns 1.7 snaps up to 2.0,
 awarding the full 5 points. Pass ``mode="nearest"`` for unbiased
-nearest-level snapping instead.
+nearest-level snapping instead, or ``mode="optimist"`` to ceil once
+20% of the way through an interval is covered (1.7 snaps to 2.0
+while 1.55 stays at 1.5).
 """
 
 from __future__ import annotations
@@ -24,7 +26,7 @@ import math
 from dataclasses import dataclass
 from typing import Literal
 
-SnapMode = Literal["ceil", "nearest"]
+SnapMode = Literal["ceil", "nearest", "optimist"]
 
 
 @dataclass(frozen=True)
@@ -65,7 +67,9 @@ def snap_to_discrete(
     rounds up to the next level, compensating for jev's systematic
     undershoot (1.66 and 1.7 both snap to 2.0); exact levels stay put.
     ``mode="nearest"`` snaps to the closest level, with exact ties
-    rounding up toward ``score_max``.
+    rounding up toward ``score_max``. ``mode="optimist"`` ceils once
+    20% of an interval is covered (upper 80% ceils, lower 20%
+    floors), so 1.7 snaps to 2.0 while 1.55 stays at 1.5.
     """
     _validate_range(score_min, score_max, num_levels)
     _validate_mode(mode)
@@ -76,8 +80,13 @@ def snap_to_discrete(
         # epsilon keeps exact levels (up to float error) on their level
         # instead of spilling over to the next one.
         index = math.ceil(quotient - 1e-9)
-    else:
+    elif mode == "nearest":
         index = math.floor(quotient + 0.5)
+    else:
+        # optimist: ceil once 20% of the interval is covered, i.e. the
+        # upper 80% ceils and the lower 20% floors; the boundary itself
+        # ceils, mirroring nearest's round-ties-up behavior.
+        index = math.floor(quotient + 0.80 + 1e-9)
     index = min(max(index, 0), num_levels - 1)
     return score_min + index * step
 
@@ -121,8 +130,8 @@ def grade_score(
 
 
 def _validate_mode(mode: str) -> None:
-    if mode not in ("ceil", "nearest"):
-        raise ValueError(f'mode ({mode!r}) must be "ceil" or "nearest".')
+    if mode not in ("ceil", "nearest", "optimist"):
+        raise ValueError(f'mode ({mode!r}) must be "ceil", "nearest" or "optimist".')
 
 
 def _validate_range(score_min: float, score_max: float, num_levels: int) -> None:
