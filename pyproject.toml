@@ -1,0 +1,20 @@
+[project]
+name = "jev-exam-scoring"
+version = "0.1.0"
+description = "Add your description here"
+readme = "README.md"
+authors = [
+    { name = "Gor Madatyan", email = "gor-madatyan@proton.me" }
+]
+requires-python = ">=3.12"
+dependencies = [
+    "python-dotenv>=1.0.0",
+    "requests>=2.34.2",
+]
+
+[project.scripts]
+ jev-exam-scoring = "jev_exam_scoring:main"
+
+[build-system]
+requires = ["uv_build>=0.12.10,<0.13.0"]
+build-backend = "uv_build"
