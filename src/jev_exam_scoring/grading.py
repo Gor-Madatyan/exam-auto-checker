@@ -201,6 +201,25 @@ def grade_pseudocode_score(
     )
 
 
+def grade_essay_score(
+    student_essay: str,
+    topic: str,
+    max_points: float,
+    requirements: str = "",
+    num_levels: int = 5,
+    mode: SnapMode = "ceil",
+) -> GradedScore:
+    """Grade an essay on a 0-2 scale, snapped to points."""
+    from .essay_check import check_essay_score
+
+    return grade_score(
+        check_essay_score(student_essay, topic, requirements),
+        max_points,
+        num_levels=num_levels,
+        mode=mode,
+    )
+
+
 def grade_code_full(
     student_code: str,
     correct_code: str,
@@ -247,6 +266,34 @@ def grade_pseudocode_full(
     result = check_pseudocode_full(
         student_pseudocode, correct_pseudocode, question_description
     )
+    checks = result["checks"]
+    score = result["score"]
+    assert isinstance(checks, dict)
+    assert isinstance(score, (int, float))
+    return {
+        "checks": checks,
+        "grading": grade_score(
+            float(score), max_points, num_levels=num_levels, mode=mode
+        ),
+    }
+
+
+def grade_essay_full(
+    student_essay: str,
+    topic: str,
+    max_points: float,
+    requirements: str = "",
+    num_levels: int = 5,
+    mode: SnapMode = "ceil",
+) -> dict[str, dict[str, float] | GradedScore]:
+    """Grade an essay: noul checks plus the 0-2 score snapped to points.
+
+    Returns {"checks": {meets_requirements, grammatically_correct},
+    "grading": GradedScore}.
+    """
+    from .essay_check import check_essay_full
+
+    result = check_essay_full(student_essay, topic, requirements)
     checks = result["checks"]
     score = result["score"]
     assert isinstance(checks, dict)

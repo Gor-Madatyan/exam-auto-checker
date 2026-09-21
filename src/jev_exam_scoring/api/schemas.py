@@ -74,6 +74,15 @@ class EssayChecks(BaseModel):
     grammatically_correct: float = Field(ge=0, le=1)
 
 
+class EssayScoreRequest(EssayCheckRequest, PointsRequest):
+    pass
+
+
+class EssayFullResponse(BaseModel):
+    checks: EssayChecks
+    grading: GradedScoreResponse
+
+
 # ---- fact ----
 class FactScoreRequest(PointsRequest):
     student_answer: str = Field(min_length=1)

@@ -7,7 +7,7 @@ from typing import TYPE_CHECKING, cast
 
 from fastapi import APIRouter, Depends
 
-from .._helpers import call_jev
+from .._helpers import ERROR_RESPONSES, call_jev
 from ..schemas import (
     GradedScoreResponse,
     PseudocodeCheckRequest,
@@ -24,11 +24,16 @@ router = APIRouter(
     prefix="/pseudocode",
     tags=["pseudocode"],
     dependencies=[Depends(verify_api_key)],
+    responses=ERROR_RESPONSES,
 )
 
 
 @router.post(
-    "/check", response_model=PseudocodeChecks, summary="Pseudocode noul checks"
+    "/check",
+    response_model=PseudocodeChecks,
+    summary="Pseudocode raw checks",
+    description="Score student pseudocode against a reference. Returns "
+    "clear_and_complete, correct_algorithm, handles_edge_cases floats in [0, 1].",
 )
 async def check_pseudocode_endpoint(body: PseudocodeCheckRequest) -> PseudocodeChecks:
     from ... import check_pseudocode as _check_pseudocode
@@ -48,6 +53,7 @@ async def check_pseudocode_endpoint(body: PseudocodeCheckRequest) -> PseudocodeC
     "/score",
     response_model=GradedScoreResponse,
     summary="Pseudocode score in points",
+    description="Grade student pseudocode directly to task points.",
 )
 async def check_pseudocode_score_endpoint(
     body: PseudocodeScoreRequest,
@@ -72,6 +78,7 @@ async def check_pseudocode_score_endpoint(
     "/full",
     response_model=PseudocodeFullResponse,
     summary="Pseudocode checks + points",
+    description="Pseudocode checks plus point grading in one call.",
 )
 async def check_pseudocode_full_endpoint(
     body: PseudocodeScoreRequest,

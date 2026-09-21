@@ -8,6 +8,15 @@ import requests
 from fastapi import HTTPException
 from fastapi.concurrency import run_in_threadpool
 
+# Documented on every scoring endpoint via APIRouter(responses=...).
+ERROR_RESPONSES: dict[int | str, dict[str, str]] = {
+    401: {"description": "Invalid or missing X-API-Key."},
+    500: {
+        "description": "Server misconfigured (API_KEY / OPENROUTER_API_KEY missing)."
+    },
+    502: {"description": "Scoring backend (OpenRouter/jev) unavailable."},
+}
+
 
 async def call_jev[T](fn: Callable[[], T]) -> T:
     """Run a blocking scoring function without blocking the event loop."""

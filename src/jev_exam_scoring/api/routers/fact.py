@@ -6,17 +6,24 @@ from functools import partial
 
 from fastapi import APIRouter, Depends
 
-from .._helpers import call_jev
+from .._helpers import ERROR_RESPONSES, call_jev
 from ..schemas import FactScoreRequest, GradedScoreResponse
 from ..security import verify_api_key
 
 router = APIRouter(
-    prefix="/fact", tags=["fact"], dependencies=[Depends(verify_api_key)]
+    prefix="/fact",
+    tags=["fact"],
+    dependencies=[Depends(verify_api_key)],
+    responses=ERROR_RESPONSES,
 )
 
 
 @router.post(
-    "/score", response_model=GradedScoreResponse, summary="Fact score in points"
+    "/score",
+    response_model=GradedScoreResponse,
+    summary="Fact score in points",
+    description="Grade a short factual answer against the correct answer, snapped "
+    "to task points. Score-only endpoint (no separate check).",
 )
 async def check_fact_score_endpoint(body: FactScoreRequest) -> GradedScoreResponse:
     from ... import grade_fact_score as _grade_fact_score

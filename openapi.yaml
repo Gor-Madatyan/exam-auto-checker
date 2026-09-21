@@ -1,0 +1,748 @@
+openapi: 3.1.0
+info:
+  title: jev-exam-scoring
+  description: 'Automated exam scoring backed by the jev scoring backend (via OpenRouter).
+    One endpoint group per scoring domain: code, essay, fact, pseudocode. Each domain
+    exposes /check (raw criterion scores in [0, 1]), /score (snapped point grade),
+    and /full (both) — except fact, which is score-only. Every endpoint requires an
+    X-API-Key header.'
+  version: 0.1.0
+paths:
+  /api/v1/code/check:
+    post:
+      tags:
+      - code
+      summary: Code raw checks
+      description: 'Score student source code against a reference solution. Returns
+        per-criterion floats in [0, 1]: compiles_and_runs, correct_algorithm, handles_edge_cases.'
+      operationId: check_code_endpoint_api_v1_code_check_post
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/CodeCheckRequest'
+        required: true
+      responses:
+        '200':
+          description: Successful Response
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/CodeChecks'
+        '401':
+          description: Invalid or missing X-API-Key.
+        '500':
+          description: Server misconfigured (API_KEY / OPENROUTER_API_KEY missing).
+        '502':
+          description: Scoring backend (OpenRouter/jev) unavailable.
+        '422':
+          description: Validation Error
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/HTTPValidationError'
+      security:
+      - APIKeyHeader: []
+  /api/v1/code/score:
+    post:
+      tags:
+      - code
+      summary: Code score in points
+      description: Grade student source code directly to task points. Snaps the raw
+        jev score to discrete levels (mode=ceil by default) and scales to max_points.
+      operationId: check_code_score_endpoint_api_v1_code_score_post
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/CodeScoreRequest'
+        required: true
+      responses:
+        '200':
+          description: Successful Response
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/GradedScoreResponse'
+        '401':
+          description: Invalid or missing X-API-Key.
+        '500':
+          description: Server misconfigured (API_KEY / OPENROUTER_API_KEY missing).
+        '502':
+          description: Scoring backend (OpenRouter/jev) unavailable.
+        '422':
+          description: Validation Error
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/HTTPValidationError'
+      security:
+      - APIKeyHeader: []
+  /api/v1/code/full:
+    post:
+      tags:
+      - code
+      summary: Code checks + points
+      description: Code checks plus point grading in one call. Request combines the
+        check fields with max_points/num_levels/mode.
+      operationId: check_code_full_endpoint_api_v1_code_full_post
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/CodeScoreRequest'
+        required: true
+      responses:
+        '200':
+          description: Successful Response
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/CodeFullResponse'
+        '401':
+          description: Invalid or missing X-API-Key.
+        '500':
+          description: Server misconfigured (API_KEY / OPENROUTER_API_KEY missing).
+        '502':
+          description: Scoring backend (OpenRouter/jev) unavailable.
+        '422':
+          description: Validation Error
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/HTTPValidationError'
+      security:
+      - APIKeyHeader: []
+  /api/v1/essay/check:
+    post:
+      tags:
+      - essay
+      summary: Essay raw checks
+      description: Score a student essay against the topic and requirements. Returns
+        meets_requirements and grammatically_correct floats in [0, 1].
+      operationId: check_essay_endpoint_api_v1_essay_check_post
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/EssayCheckRequest'
+        required: true
+      responses:
+        '200':
+          description: Successful Response
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/EssayChecks'
+        '401':
+          description: Invalid or missing X-API-Key.
+        '500':
+          description: Server misconfigured (API_KEY / OPENROUTER_API_KEY missing).
+        '502':
+          description: Scoring backend (OpenRouter/jev) unavailable.
+        '422':
+          description: Validation Error
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/HTTPValidationError'
+      security:
+      - APIKeyHeader: []
+  /api/v1/essay/score:
+    post:
+      tags:
+      - essay
+      summary: Essay score in points
+      description: Grade a student essay directly to task points (discrete snap scaled
+        to max_points).
+      operationId: check_essay_score_endpoint_api_v1_essay_score_post
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/EssayScoreRequest'
+        required: true
+      responses:
+        '200':
+          description: Successful Response
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/GradedScoreResponse'
+        '401':
+          description: Invalid or missing X-API-Key.
+        '500':
+          description: Server misconfigured (API_KEY / OPENROUTER_API_KEY missing).
+        '502':
+          description: Scoring backend (OpenRouter/jev) unavailable.
+        '422':
+          description: Validation Error
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/HTTPValidationError'
+      security:
+      - APIKeyHeader: []
+  /api/v1/essay/full:
+    post:
+      tags:
+      - essay
+      summary: Essay checks + points
+      description: Essay checks plus point grading in one call.
+      operationId: check_essay_full_endpoint_api_v1_essay_full_post
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/EssayScoreRequest'
+        required: true
+      responses:
+        '200':
+          description: Successful Response
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/EssayFullResponse'
+        '401':
+          description: Invalid or missing X-API-Key.
+        '500':
+          description: Server misconfigured (API_KEY / OPENROUTER_API_KEY missing).
+        '502':
+          description: Scoring backend (OpenRouter/jev) unavailable.
+        '422':
+          description: Validation Error
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/HTTPValidationError'
+      security:
+      - APIKeyHeader: []
+  /api/v1/fact/score:
+    post:
+      tags:
+      - fact
+      summary: Fact score in points
+      description: Grade a short factual answer against the correct answer, snapped
+        to task points. Score-only endpoint (no separate check).
+      operationId: check_fact_score_endpoint_api_v1_fact_score_post
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/FactScoreRequest'
+        required: true
+      responses:
+        '200':
+          description: Successful Response
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/GradedScoreResponse'
+        '401':
+          description: Invalid or missing X-API-Key.
+        '500':
+          description: Server misconfigured (API_KEY / OPENROUTER_API_KEY missing).
+        '502':
+          description: Scoring backend (OpenRouter/jev) unavailable.
+        '422':
+          description: Validation Error
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/HTTPValidationError'
+      security:
+      - APIKeyHeader: []
+  /api/v1/pseudocode/check:
+    post:
+      tags:
+      - pseudocode
+      summary: Pseudocode raw checks
+      description: Score student pseudocode against a reference. Returns clear_and_complete,
+        correct_algorithm, handles_edge_cases floats in [0, 1].
+      operationId: check_pseudocode_endpoint_api_v1_pseudocode_check_post
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/PseudocodeCheckRequest'
+        required: true
+      responses:
+        '200':
+          description: Successful Response
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/PseudocodeChecks'
+        '401':
+          description: Invalid or missing X-API-Key.
+        '500':
+          description: Server misconfigured (API_KEY / OPENROUTER_API_KEY missing).
+        '502':
+          description: Scoring backend (OpenRouter/jev) unavailable.
+        '422':
+          description: Validation Error
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/HTTPValidationError'
+      security:
+      - APIKeyHeader: []
+  /api/v1/pseudocode/score:
+    post:
+      tags:
+      - pseudocode
+      summary: Pseudocode score in points
+      description: Grade student pseudocode directly to task points.
+      operationId: check_pseudocode_score_endpoint_api_v1_pseudocode_score_post
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/PseudocodeScoreRequest'
+        required: true
+      responses:
+        '200':
+          description: Successful Response
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/GradedScoreResponse'
+        '401':
+          description: Invalid or missing X-API-Key.
+        '500':
+          description: Server misconfigured (API_KEY / OPENROUTER_API_KEY missing).
+        '502':
+          description: Scoring backend (OpenRouter/jev) unavailable.
+        '422':
+          description: Validation Error
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/HTTPValidationError'
+      security:
+      - APIKeyHeader: []
+  /api/v1/pseudocode/full:
+    post:
+      tags:
+      - pseudocode
+      summary: Pseudocode checks + points
+      description: Pseudocode checks plus point grading in one call.
+      operationId: check_pseudocode_full_endpoint_api_v1_pseudocode_full_post
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/PseudocodeScoreRequest'
+        required: true
+      responses:
+        '200':
+          description: Successful Response
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/PseudocodeFullResponse'
+        '401':
+          description: Invalid or missing X-API-Key.
+        '500':
+          description: Server misconfigured (API_KEY / OPENROUTER_API_KEY missing).
+        '502':
+          description: Scoring backend (OpenRouter/jev) unavailable.
+        '422':
+          description: Validation Error
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/HTTPValidationError'
+      security:
+      - APIKeyHeader: []
+components:
+  schemas:
+    CodeCheckRequest:
+      properties:
+        student_code:
+          type: string
+          minLength: 1
+          title: Student Code
+        correct_code:
+          type: string
+          minLength: 1
+          title: Correct Code
+        question_description:
+          type: string
+          minLength: 1
+          title: Question Description
+      type: object
+      required:
+      - student_code
+      - correct_code
+      - question_description
+      title: CodeCheckRequest
+    CodeChecks:
+      properties:
+        compiles_and_runs:
+          type: number
+          maximum: 1.0
+          minimum: 0.0
+          title: Compiles And Runs
+        correct_algorithm:
+          type: number
+          maximum: 1.0
+          minimum: 0.0
+          title: Correct Algorithm
+        handles_edge_cases:
+          type: number
+          maximum: 1.0
+          minimum: 0.0
+          title: Handles Edge Cases
+      type: object
+      required:
+      - compiles_and_runs
+      - correct_algorithm
+      - handles_edge_cases
+      title: CodeChecks
+    CodeFullResponse:
+      properties:
+        checks:
+          $ref: '#/components/schemas/CodeChecks'
+        grading:
+          $ref: '#/components/schemas/GradedScoreResponse'
+      type: object
+      required:
+      - checks
+      - grading
+      title: CodeFullResponse
+    CodeScoreRequest:
+      properties:
+        max_points:
+          type: number
+          exclusiveMinimum: 0.0
+          title: Max Points
+        num_levels:
+          type: integer
+          minimum: 2.0
+          title: Num Levels
+          default: 5
+        mode:
+          type: string
+          enum:
+          - ceil
+          - nearest
+          title: Mode
+          default: ceil
+        student_code:
+          type: string
+          minLength: 1
+          title: Student Code
+        correct_code:
+          type: string
+          minLength: 1
+          title: Correct Code
+        question_description:
+          type: string
+          minLength: 1
+          title: Question Description
+      type: object
+      required:
+      - max_points
+      - student_code
+      - correct_code
+      - question_description
+      title: CodeScoreRequest
+    EssayCheckRequest:
+      properties:
+        student_essay:
+          type: string
+          minLength: 1
+          title: Student Essay
+        topic:
+          type: string
+          minLength: 1
+          title: Topic
+        requirements:
+          type: string
+          title: Requirements
+          default: ''
+      type: object
+      required:
+      - student_essay
+      - topic
+      title: EssayCheckRequest
+    EssayChecks:
+      properties:
+        meets_requirements:
+          type: number
+          maximum: 1.0
+          minimum: 0.0
+          title: Meets Requirements
+        grammatically_correct:
+          type: number
+          maximum: 1.0
+          minimum: 0.0
+          title: Grammatically Correct
+      type: object
+      required:
+      - meets_requirements
+      - grammatically_correct
+      title: EssayChecks
+    EssayFullResponse:
+      properties:
+        checks:
+          $ref: '#/components/schemas/EssayChecks'
+        grading:
+          $ref: '#/components/schemas/GradedScoreResponse'
+      type: object
+      required:
+      - checks
+      - grading
+      title: EssayFullResponse
+    EssayScoreRequest:
+      properties:
+        max_points:
+          type: number
+          exclusiveMinimum: 0.0
+          title: Max Points
+        num_levels:
+          type: integer
+          minimum: 2.0
+          title: Num Levels
+          default: 5
+        mode:
+          type: string
+          enum:
+          - ceil
+          - nearest
+          title: Mode
+          default: ceil
+        student_essay:
+          type: string
+          minLength: 1
+          title: Student Essay
+        topic:
+          type: string
+          minLength: 1
+          title: Topic
+        requirements:
+          type: string
+          title: Requirements
+          default: ''
+      type: object
+      required:
+      - max_points
+      - student_essay
+      - topic
+      title: EssayScoreRequest
+    FactScoreRequest:
+      properties:
+        max_points:
+          type: number
+          exclusiveMinimum: 0.0
+          title: Max Points
+        num_levels:
+          type: integer
+          minimum: 2.0
+          title: Num Levels
+          default: 5
+        mode:
+          type: string
+          enum:
+          - ceil
+          - nearest
+          title: Mode
+          default: ceil
+        student_answer:
+          type: string
+          minLength: 1
+          title: Student Answer
+        correct_answer:
+          type: string
+          minLength: 1
+          title: Correct Answer
+        question_description:
+          type: string
+          minLength: 1
+          title: Question Description
+      type: object
+      required:
+      - max_points
+      - student_answer
+      - correct_answer
+      - question_description
+      title: FactScoreRequest
+    GradedScoreResponse:
+      properties:
+        raw_score:
+          type: number
+          title: Raw Score
+        discrete_score:
+          type: number
+          title: Discrete Score
+        max_points:
+          type: number
+          title: Max Points
+        points:
+          type: number
+          title: Points
+        levels:
+          items:
+            type: number
+          type: array
+          title: Levels
+        mode:
+          type: string
+          enum:
+          - ceil
+          - nearest
+          title: Mode
+      type: object
+      required:
+      - raw_score
+      - discrete_score
+      - max_points
+      - points
+      - levels
+      - mode
+      title: GradedScoreResponse
+    HTTPValidationError:
+      properties:
+        detail:
+          items:
+            $ref: '#/components/schemas/ValidationError'
+          type: array
+          title: Detail
+      type: object
+      title: HTTPValidationError
+    PseudocodeCheckRequest:
+      properties:
+        student_pseudocode:
+          type: string
+          minLength: 1
+          title: Student Pseudocode
+        correct_pseudocode:
+          type: string
+          minLength: 1
+          title: Correct Pseudocode
+        question_description:
+          type: string
+          minLength: 1
+          title: Question Description
+      type: object
+      required:
+      - student_pseudocode
+      - correct_pseudocode
+      - question_description
+      title: PseudocodeCheckRequest
+    PseudocodeChecks:
+      properties:
+        clear_and_complete:
+          type: number
+          maximum: 1.0
+          minimum: 0.0
+          title: Clear And Complete
+        correct_algorithm:
+          type: number
+          maximum: 1.0
+          minimum: 0.0
+          title: Correct Algorithm
+        handles_edge_cases:
+          type: number
+          maximum: 1.0
+          minimum: 0.0
+          title: Handles Edge Cases
+      type: object
+      required:
+      - clear_and_complete
+      - correct_algorithm
+      - handles_edge_cases
+      title: PseudocodeChecks
+    PseudocodeFullResponse:
+      properties:
+        checks:
+          $ref: '#/components/schemas/PseudocodeChecks'
+        grading:
+          $ref: '#/components/schemas/GradedScoreResponse'
+      type: object
+      required:
+      - checks
+      - grading
+      title: PseudocodeFullResponse
+    PseudocodeScoreRequest:
+      properties:
+        max_points:
+          type: number
+          exclusiveMinimum: 0.0
+          title: Max Points
+        num_levels:
+          type: integer
+          minimum: 2.0
+          title: Num Levels
+          default: 5
+        mode:
+          type: string
+          enum:
+          - ceil
+          - nearest
+          title: Mode
+          default: ceil
+        student_pseudocode:
+          type: string
+          minLength: 1
+          title: Student Pseudocode
+        correct_pseudocode:
+          type: string
+          minLength: 1
+          title: Correct Pseudocode
+        question_description:
+          type: string
+          minLength: 1
+          title: Question Description
+      type: object
+      required:
+      - max_points
+      - student_pseudocode
+      - correct_pseudocode
+      - question_description
+      title: PseudocodeScoreRequest
+    ValidationError:
+      properties:
+        loc:
+          items:
+            anyOf:
+            - type: string
+            - type: integer
+          type: array
+          title: Location
+        msg:
+          type: string
+          title: Message
+        type:
+          type: string
+          title: Error Type
+        input:
+          title: Input
+        ctx:
+          type: object
+          title: Context
+      type: object
+      required:
+      - loc
+      - msg
+      - type
+      title: ValidationError
+  securitySchemes:
+    APIKeyHeader:
+      type: apiKey
+      description: Backend API key (server API_KEY env). Required on every endpoint.
+      in: header
+      name: X-API-Key
+tags:
+- name: code
+  description: Source-code answer scoring (compiles/runs, algorithm, edge cases).
+- name: essay
+  description: Free-text essay scoring (requirements, grammar).
+- name: fact
+  description: Short factual-answer scoring, graded directly to points.
+- name: pseudocode
+  description: Pseudocode answer scoring (clarity, algorithm, edge cases).
+servers:
+- url: http://localhost:8000
+  description: Local dev (uvicorn)

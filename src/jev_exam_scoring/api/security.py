@@ -9,7 +9,11 @@ from fastapi.security import APIKeyHeader
 
 from .config import get_settings
 
-api_key_header = APIKeyHeader(name="X-API-Key", auto_error=False)
+api_key_header = APIKeyHeader(
+    name="X-API-Key",
+    auto_error=False,
+    description="Backend API key (server API_KEY env). Required on every endpoint.",
+)
 
 
 async def verify_api_key(

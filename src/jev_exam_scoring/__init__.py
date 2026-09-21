@@ -1,5 +1,5 @@
 from .code_check import check_code, check_code_full, check_code_score
-from .essay_check import check_essay
+from .essay_check import check_essay, check_essay_full, check_essay_score
 from .fact_check import check_fact_score
 from .grading import (
     GradedScore,
@@ -7,6 +7,8 @@ from .grading import (
     discrete_levels,
     grade_code_full,
     grade_code_score,
+    grade_essay_full,
+    grade_essay_score,
     grade_fact_score,
     grade_pseudocode_full,
     grade_pseudocode_score,
@@ -27,6 +29,8 @@ __all__ = [
     "check_code_full",
     "check_code_score",
     "check_essay",
+    "check_essay_full",
+    "check_essay_score",
     "check_fact_score",
     "check_pseudocode",
     "check_pseudocode_full",
@@ -34,6 +38,8 @@ __all__ = [
     "discrete_levels",
     "grade_code_full",
     "grade_code_score",
+    "grade_essay_full",
+    "grade_essay_score",
     "grade_fact_score",
     "grade_pseudocode_full",
     "grade_pseudocode_score",
