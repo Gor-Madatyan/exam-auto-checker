@@ -7,7 +7,7 @@ from functools import partial
 from fastapi import APIRouter, Depends
 
 from .._helpers import call_jev
-from ..schemas import FactScoreRequest, FactScoreResponse
+from ..schemas import FactScoreRequest, GradedScoreResponse
 from ..security import verify_api_key
 
 router = APIRouter(
@@ -15,16 +15,21 @@ router = APIRouter(
 )
 
 
-@router.post("/score", response_model=FactScoreResponse, summary="Fact 0-2 score")
-async def check_fact_score_endpoint(body: FactScoreRequest) -> FactScoreResponse:
-    from ... import check_fact_score as _check_fact_score
+@router.post(
+    "/score", response_model=GradedScoreResponse, summary="Fact score in points"
+)
+async def check_fact_score_endpoint(body: FactScoreRequest) -> GradedScoreResponse:
+    from ... import grade_fact_score as _grade_fact_score
 
-    score = await call_jev(
+    graded = await call_jev(
         partial(
-            _check_fact_score,
+            _grade_fact_score,
             student_answer=body.student_answer,
             correct_answer=body.correct_answer,
             question_description=body.question_description,
+            max_points=body.max_points,
+            num_levels=body.num_levels,
+            mode=body.mode,
         )
     )
-    return FactScoreResponse(score=score)
+    return GradedScoreResponse.from_graded(graded)
