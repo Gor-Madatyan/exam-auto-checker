@@ -1,16 +1,18 @@
-"""Benchmark jev's fact-checking score prompt on short and long answers.
+"""Benchmark jev's fact-checking prompt on short and long answers.
 
-Runs check_fact_score across edge cases: correct/incorrect, short/long,
+Runs check_fact across edge cases: correct/incorrect, short/long,
 buried errors, extra incorrect claims, omissions, off-topic, and empty answers.
 
-The score type returns a continuous expected value (0-2), so each case is
-evaluated against a score band rather than an exact integer:
+check_fact returns one noul float in [0, 1] per criterion
+(factually_correct, complete, answers_question) plus the derived fact_score
+on the 0-2 scale (weighted average joined with coefficients). Each case is
+evaluated against a score band rather than an exact value:
   - correct    -> [1.5, 2.0]
   - partial    -> [0.5, 1.5)
   - incorrect  -> [0.0, 0.5)
 """
 
-from jev_exam_scoring.fact_check import check_fact_score
+from jev_exam_scoring.fact_check import check_fact
 
 QUESTION = "What is the difference between DDoS and DoS?"
 
@@ -99,7 +101,8 @@ def main() -> None:
     print("-" * 60)
     for name, (lo, hi), submission in CASES:
         try:
-            actual = check_fact_score(submission, REFERENCE, QUESTION)
+            result = check_fact(submission, REFERENCE, QUESTION, 2.0)
+            actual = result["fact_score"]
         except Exception as exc:
             print(f"{name:<26} {'ERR':<14} {'ERR':<7} {exc}")
             continue

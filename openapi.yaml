@@ -3,18 +3,22 @@ info:
   title: jev-exam-scoring
   description: 'Automated exam scoring backed by the jev scoring backend (via OpenRouter).
     One endpoint group per scoring domain: code, essay, fact, pseudocode. Each domain
-    exposes /check (raw criterion scores in [0, 1]), /score (snapped point grade),
-    and /full (both) — except fact, which is score-only. Every endpoint requires an
-    X-API-Key header.'
+    exposes a single /check endpoint returning per-criterion noul floats in [0, 1],
+    the derived 0-2 score (criteria joined with coefficients), and points_given. Every
+    endpoint requires an X-API-Key header.'
   version: 0.1.0
 paths:
   /api/v1/code/check:
     post:
       tags:
       - code
-      summary: Code raw checks
-      description: 'Score student source code against a reference solution. Returns
-        per-criterion floats in [0, 1]: compiles_and_runs, correct_algorithm, handles_edge_cases.'
+      summary: Code checks + derived score
+      description: Score student source code against a reference solution. Returns
+        per-criterion floats in [0, 1] (compiles_and_runs, correct_algorithm, handles_edge_cases)
+        plus the derived code_score on the 0-2 scale (compiles_and_runs * 0.2 + correct_algorithm
+        * 0.5 + handles_edge_cases * 0.3, remapped to 0-2 through the dense_power
+        curve) and points_given. Fail the submission if compiles_and_runs < 0.5 or
+        correct_algorithm < 0.5.
       operationId: check_code_endpoint_api_v1_code_check_post
       requestBody:
         content:
@@ -43,83 +47,15 @@ paths:
                 $ref: '#/components/schemas/HTTPValidationError'
       security:
       - APIKeyHeader: []
-  /api/v1/code/score:
-    post:
-      tags:
-      - code
-      summary: Code score in points
-      description: Grade student source code directly to task points. Snaps the raw
-        jev score to discrete levels (mode=ceil by default) and scales to max_points.
-      operationId: check_code_score_endpoint_api_v1_code_score_post
-      requestBody:
-        content:
-          application/json:
-            schema:
-              $ref: '#/components/schemas/CodeScoreRequest'
-        required: true
-      responses:
-        '200':
-          description: Successful Response
-          content:
-            application/json:
-              schema:
-                $ref: '#/components/schemas/GradedScoreResponse'
-        '401':
-          description: Invalid or missing X-API-Key.
-        '500':
-          description: Server misconfigured (API_KEY / OPENROUTER_API_KEY missing).
-        '502':
-          description: Scoring backend (OpenRouter/jev) unavailable.
-        '422':
-          description: Validation Error
-          content:
-            application/json:
-              schema:
-                $ref: '#/components/schemas/HTTPValidationError'
-      security:
-      - APIKeyHeader: []
-  /api/v1/code/full:
-    post:
-      tags:
-      - code
-      summary: Code checks + points
-      description: Code checks plus point grading in one call. Request combines the
-        check fields with max_points/num_levels/mode.
-      operationId: check_code_full_endpoint_api_v1_code_full_post
-      requestBody:
-        content:
-          application/json:
-            schema:
-              $ref: '#/components/schemas/CodeScoreRequest'
-        required: true
-      responses:
-        '200':
-          description: Successful Response
-          content:
-            application/json:
-              schema:
-                $ref: '#/components/schemas/CodeFullResponse'
-        '401':
-          description: Invalid or missing X-API-Key.
-        '500':
-          description: Server misconfigured (API_KEY / OPENROUTER_API_KEY missing).
-        '502':
-          description: Scoring backend (OpenRouter/jev) unavailable.
-        '422':
-          description: Validation Error
-          content:
-            application/json:
-              schema:
-                $ref: '#/components/schemas/HTTPValidationError'
-      security:
-      - APIKeyHeader: []
   /api/v1/essay/check:
     post:
       tags:
       - essay
-      summary: Essay raw checks
+      summary: Essay checks + derived score
       description: Score a student essay against the topic and requirements. Returns
-        meets_requirements and grammatically_correct floats in [0, 1].
+        meets_requirements and grammatically_correct floats in [0, 1] plus the derived
+        essay_score on the 0-2 scale (grammatically_correct * 0.6 + meets_requirements
+        * 0.4, remapped to 0-2 through the dense_power curve) and points_given.
       operationId: check_essay_endpoint_api_v1_essay_check_post
       requestBody:
         content:
@@ -148,88 +84,22 @@ paths:
                 $ref: '#/components/schemas/HTTPValidationError'
       security:
       - APIKeyHeader: []
-  /api/v1/essay/score:
-    post:
-      tags:
-      - essay
-      summary: Essay score in points
-      description: Grade a student essay directly to task points (discrete snap scaled
-        to max_points).
-      operationId: check_essay_score_endpoint_api_v1_essay_score_post
-      requestBody:
-        content:
-          application/json:
-            schema:
-              $ref: '#/components/schemas/EssayScoreRequest'
-        required: true
-      responses:
-        '200':
-          description: Successful Response
-          content:
-            application/json:
-              schema:
-                $ref: '#/components/schemas/GradedScoreResponse'
-        '401':
-          description: Invalid or missing X-API-Key.
-        '500':
-          description: Server misconfigured (API_KEY / OPENROUTER_API_KEY missing).
-        '502':
-          description: Scoring backend (OpenRouter/jev) unavailable.
-        '422':
-          description: Validation Error
-          content:
-            application/json:
-              schema:
-                $ref: '#/components/schemas/HTTPValidationError'
-      security:
-      - APIKeyHeader: []
-  /api/v1/essay/full:
-    post:
-      tags:
-      - essay
-      summary: Essay checks + points
-      description: Essay checks plus point grading in one call.
-      operationId: check_essay_full_endpoint_api_v1_essay_full_post
-      requestBody:
-        content:
-          application/json:
-            schema:
-              $ref: '#/components/schemas/EssayScoreRequest'
-        required: true
-      responses:
-        '200':
-          description: Successful Response
-          content:
-            application/json:
-              schema:
-                $ref: '#/components/schemas/EssayFullResponse'
-        '401':
-          description: Invalid or missing X-API-Key.
-        '500':
-          description: Server misconfigured (API_KEY / OPENROUTER_API_KEY missing).
-        '502':
-          description: Scoring backend (OpenRouter/jev) unavailable.
-        '422':
-          description: Validation Error
-          content:
-            application/json:
-              schema:
-                $ref: '#/components/schemas/HTTPValidationError'
-      security:
-      - APIKeyHeader: []
-  /api/v1/fact/score:
+  /api/v1/fact/check:
     post:
       tags:
       - fact
-      summary: Fact score in points
-      description: Grade a short factual answer against the correct answer, snapped
-        to task points. Score-only endpoint (no separate check).
-      operationId: check_fact_score_endpoint_api_v1_fact_score_post
+      summary: Fact checks + derived score
+      description: Grade a factual answer against the correct answer. Returns per-criterion
+        floats in [0, 1] (factually_correct, complete, answers_question) plus the
+        derived fact_score on the 0-2 scale (factually_correct * 0.5 + complete *
+        0.3 + answers_question * 0.2, remapped to 0-2 through the dense_power curve)
+        and points_given.
+      operationId: check_fact_endpoint_api_v1_fact_check_post
       requestBody:
         content:
           application/json:
             schema:
-              $ref: '#/components/schemas/FactScoreRequest'
+              $ref: '#/components/schemas/FactCheckRequest'
         required: true
       responses:
         '200':
@@ -237,7 +107,7 @@ paths:
           content:
             application/json:
               schema:
-                $ref: '#/components/schemas/GradedScoreResponse'
+                $ref: '#/components/schemas/FactChecks'
         '401':
           description: Invalid or missing X-API-Key.
         '500':
@@ -256,9 +126,13 @@ paths:
     post:
       tags:
       - pseudocode
-      summary: Pseudocode raw checks
-      description: Score student pseudocode against a reference. Returns clear_and_complete,
-        correct_algorithm, handles_edge_cases floats in [0, 1].
+      summary: Pseudocode checks + derived score
+      description: Score student pseudocode against a reference. Returns per-criterion
+        floats in [0, 1] (clear_and_complete, correct_algorithm, handles_edge_cases)
+        plus the derived pseudocode_score on the 0-2 scale (clear_and_complete * 0.2
+        + correct_algorithm * 0.5 + handles_edge_cases * 0.3, remapped to 0-2 through
+        the dense_power curve) and points_given. Fail the submission if clear_and_complete
+        < 0.5 or correct_algorithm < 0.5.
       operationId: check_pseudocode_endpoint_api_v1_pseudocode_check_post
       requestBody:
         content:
@@ -273,74 +147,6 @@ paths:
             application/json:
               schema:
                 $ref: '#/components/schemas/PseudocodeChecks'
-        '401':
-          description: Invalid or missing X-API-Key.
-        '500':
-          description: Server misconfigured (API_KEY / OPENROUTER_API_KEY missing).
-        '502':
-          description: Scoring backend (OpenRouter/jev) unavailable.
-        '422':
-          description: Validation Error
-          content:
-            application/json:
-              schema:
-                $ref: '#/components/schemas/HTTPValidationError'
-      security:
-      - APIKeyHeader: []
-  /api/v1/pseudocode/score:
-    post:
-      tags:
-      - pseudocode
-      summary: Pseudocode score in points
-      description: Grade student pseudocode directly to task points.
-      operationId: check_pseudocode_score_endpoint_api_v1_pseudocode_score_post
-      requestBody:
-        content:
-          application/json:
-            schema:
-              $ref: '#/components/schemas/PseudocodeScoreRequest'
-        required: true
-      responses:
-        '200':
-          description: Successful Response
-          content:
-            application/json:
-              schema:
-                $ref: '#/components/schemas/GradedScoreResponse'
-        '401':
-          description: Invalid or missing X-API-Key.
-        '500':
-          description: Server misconfigured (API_KEY / OPENROUTER_API_KEY missing).
-        '502':
-          description: Scoring backend (OpenRouter/jev) unavailable.
-        '422':
-          description: Validation Error
-          content:
-            application/json:
-              schema:
-                $ref: '#/components/schemas/HTTPValidationError'
-      security:
-      - APIKeyHeader: []
-  /api/v1/pseudocode/full:
-    post:
-      tags:
-      - pseudocode
-      summary: Pseudocode checks + points
-      description: Pseudocode checks plus point grading in one call.
-      operationId: check_pseudocode_full_endpoint_api_v1_pseudocode_full_post
-      requestBody:
-        content:
-          application/json:
-            schema:
-              $ref: '#/components/schemas/PseudocodeScoreRequest'
-        required: true
-      responses:
-        '200':
-          description: Successful Response
-          content:
-            application/json:
-              schema:
-                $ref: '#/components/schemas/PseudocodeFullResponse'
         '401':
           description: Invalid or missing X-API-Key.
         '500':
@@ -371,11 +177,16 @@ components:
           type: string
           minLength: 1
           title: Question Description
+        max_points:
+          type: number
+          exclusiveMinimum: 0.0
+          title: Max Points
       type: object
       required:
       - student_code
       - correct_code
       - question_description
+      - max_points
       title: CodeCheckRequest
     CodeChecks:
       properties:
@@ -394,61 +205,23 @@ components:
           maximum: 1.0
           minimum: 0.0
           title: Handles Edge Cases
+        code_score:
+          type: number
+          maximum: 2.0
+          minimum: 0.0
+          title: Code Score
+        points_given:
+          type: number
+          minimum: 0.0
+          title: Points Given
       type: object
       required:
       - compiles_and_runs
       - correct_algorithm
       - handles_edge_cases
+      - code_score
+      - points_given
       title: CodeChecks
-    CodeFullResponse:
-      properties:
-        checks:
-          $ref: '#/components/schemas/CodeChecks'
-        grading:
-          $ref: '#/components/schemas/GradedScoreResponse'
-      type: object
-      required:
-      - checks
-      - grading
-      title: CodeFullResponse
-    CodeScoreRequest:
-      properties:
-        max_points:
-          type: number
-          exclusiveMinimum: 0.0
-          title: Max Points
-        num_levels:
-          type: integer
-          minimum: 2.0
-          title: Num Levels
-          default: 5
-        mode:
-          type: string
-          enum:
-          - ceil
-          - nearest
-          - optimist
-          title: Mode
-          default: ceil
-        student_code:
-          type: string
-          minLength: 1
-          title: Student Code
-        correct_code:
-          type: string
-          minLength: 1
-          title: Correct Code
-        question_description:
-          type: string
-          minLength: 1
-          title: Question Description
-      type: object
-      required:
-      - max_points
-      - student_code
-      - correct_code
-      - question_description
-      title: CodeScoreRequest
     EssayCheckRequest:
       properties:
         student_essay:
@@ -463,10 +236,15 @@ components:
           type: string
           title: Requirements
           default: ''
+        max_points:
+          type: number
+          exclusiveMinimum: 0.0
+          title: Max Points
       type: object
       required:
       - student_essay
       - topic
+      - max_points
       title: EssayCheckRequest
     EssayChecks:
       properties:
@@ -480,78 +258,24 @@ components:
           maximum: 1.0
           minimum: 0.0
           title: Grammatically Correct
+        essay_score:
+          type: number
+          maximum: 2.0
+          minimum: 0.0
+          title: Essay Score
+        points_given:
+          type: number
+          minimum: 0.0
+          title: Points Given
       type: object
       required:
       - meets_requirements
       - grammatically_correct
+      - essay_score
+      - points_given
       title: EssayChecks
-    EssayFullResponse:
+    FactCheckRequest:
       properties:
-        checks:
-          $ref: '#/components/schemas/EssayChecks'
-        grading:
-          $ref: '#/components/schemas/GradedScoreResponse'
-      type: object
-      required:
-      - checks
-      - grading
-      title: EssayFullResponse
-    EssayScoreRequest:
-      properties:
-        max_points:
-          type: number
-          exclusiveMinimum: 0.0
-          title: Max Points
-        num_levels:
-          type: integer
-          minimum: 2.0
-          title: Num Levels
-          default: 5
-        mode:
-          type: string
-          enum:
-          - ceil
-          - nearest
-          - optimist
-          title: Mode
-          default: ceil
-        student_essay:
-          type: string
-          minLength: 1
-          title: Student Essay
-        topic:
-          type: string
-          minLength: 1
-          title: Topic
-        requirements:
-          type: string
-          title: Requirements
-          default: ''
-      type: object
-      required:
-      - max_points
-      - student_essay
-      - topic
-      title: EssayScoreRequest
-    FactScoreRequest:
-      properties:
-        max_points:
-          type: number
-          exclusiveMinimum: 0.0
-          title: Max Points
-        num_levels:
-          type: integer
-          minimum: 2.0
-          title: Num Levels
-          default: 5
-        mode:
-          type: string
-          enum:
-          - ceil
-          - nearest
-          - optimist
-          title: Mode
-          default: ceil
         student_answer:
           type: string
           minLength: 1
@@ -564,48 +288,51 @@ components:
           type: string
           minLength: 1
           title: Question Description
+        max_points:
+          type: number
+          exclusiveMinimum: 0.0
+          title: Max Points
       type: object
       required:
-      - max_points
       - student_answer
       - correct_answer
       - question_description
-      title: FactScoreRequest
-    GradedScoreResponse:
+      - max_points
+      title: FactCheckRequest
+    FactChecks:
       properties:
-        raw_score:
+        factually_correct:
           type: number
-          title: Raw Score
-        discrete_score:
+          maximum: 1.0
+          minimum: 0.0
+          title: Factually Correct
+        complete:
           type: number
-          title: Discrete Score
-        max_points:
+          maximum: 1.0
+          minimum: 0.0
+          title: Complete
+        answers_question:
           type: number
-          title: Max Points
-        points:
+          maximum: 1.0
+          minimum: 0.0
+          title: Answers Question
+        fact_score:
           type: number
-          title: Points
-        levels:
-          items:
-            type: number
-          type: array
-          title: Levels
-        mode:
-          type: string
-          enum:
-          - ceil
-          - nearest
-          - optimist
-          title: Mode
+          maximum: 2.0
+          minimum: 0.0
+          title: Fact Score
+        points_given:
+          type: number
+          minimum: 0.0
+          title: Points Given
       type: object
       required:
-      - raw_score
-      - discrete_score
-      - max_points
-      - points
-      - levels
-      - mode
-      title: GradedScoreResponse
+      - factually_correct
+      - complete
+      - answers_question
+      - fact_score
+      - points_given
+      title: FactChecks
     HTTPValidationError:
       properties:
         detail:
@@ -629,11 +356,16 @@ components:
           type: string
           minLength: 1
           title: Question Description
+        max_points:
+          type: number
+          exclusiveMinimum: 0.0
+          title: Max Points
       type: object
       required:
       - student_pseudocode
       - correct_pseudocode
       - question_description
+      - max_points
       title: PseudocodeCheckRequest
     PseudocodeChecks:
       properties:
@@ -652,61 +384,23 @@ components:
           maximum: 1.0
           minimum: 0.0
           title: Handles Edge Cases
+        pseudocode_score:
+          type: number
+          maximum: 2.0
+          minimum: 0.0
+          title: Pseudocode Score
+        points_given:
+          type: number
+          minimum: 0.0
+          title: Points Given
       type: object
       required:
       - clear_and_complete
       - correct_algorithm
       - handles_edge_cases
+      - pseudocode_score
+      - points_given
       title: PseudocodeChecks
-    PseudocodeFullResponse:
-      properties:
-        checks:
-          $ref: '#/components/schemas/PseudocodeChecks'
-        grading:
-          $ref: '#/components/schemas/GradedScoreResponse'
-      type: object
-      required:
-      - checks
-      - grading
-      title: PseudocodeFullResponse
-    PseudocodeScoreRequest:
-      properties:
-        max_points:
-          type: number
-          exclusiveMinimum: 0.0
-          title: Max Points
-        num_levels:
-          type: integer
-          minimum: 2.0
-          title: Num Levels
-          default: 5
-        mode:
-          type: string
-          enum:
-          - ceil
-          - nearest
-          - optimist
-          title: Mode
-          default: ceil
-        student_pseudocode:
-          type: string
-          minLength: 1
-          title: Student Pseudocode
-        correct_pseudocode:
-          type: string
-          minLength: 1
-          title: Correct Pseudocode
-        question_description:
-          type: string
-          minLength: 1
-          title: Question Description
-      type: object
-      required:
-      - max_points
-      - student_pseudocode
-      - correct_pseudocode
-      - question_description
-      title: PseudocodeScoreRequest
     ValidationError:
       properties:
         loc:
@@ -748,6 +442,3 @@ tags:
   description: Short factual-answer scoring, graded directly to points.
 - name: pseudocode
   description: Pseudocode answer scoring (clarity, algorithm, edge cases).
-servers:
-- url: http://localhost:8000
-  description: Local dev (uvicorn)

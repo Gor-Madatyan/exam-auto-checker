@@ -1,114 +1,82 @@
 from .util import *
+from .util import build_state
 
 
 def build_essay_state(topic: str, requirements: str, student_essay: str) -> str:
     """Build the state prompt sent to jev for essay grading."""
-    return f"""
-Essay Topic:
-{topic}
-
-Essay Requirements:
-{requirements}
-
-Student Essay:
-{student_essay}
-"""
+    return build_state(topic, requirements, student_essay,)
 
 
 ESSAY_NOUL_QUESTIONS = {
     "meets_requirements": {
         "type": "noul",
-        "instructions": "Does the student essay fulfil the essay requirements? It must stay on the given topic (no drifting off-topic), meet the required word count / length stated in the requirements, and follow standard essay structure with an introduction, body paragraphs, and conclusion presenting a coherent argument.",
+        "instructions": "Does the student essay fulfil the essay requirements?",
         "criteria": {
-            "true": "Meets topic, length, and essay structure requirements",
-            "false": "Off-topic, wrong length, or missing essay structure",
+            "true": "Meets topic and length requirements",
+            "false": "Off-topic or wrong length",
         },
     },
     "grammatically_correct": {
         "type": "noul",
-        "instructions": "Is the essay grammatically correct? Check grammar, spelling, punctuation, and sentence structure. A single minor typo is still correct; repeated errors or errors that obscure meaning are not correct.",
+        "instructions": "Is the essay grammatically correct?",
         "criteria": {
-            "true": "Grammatically correct with correct spelling",
-            "false": "Grammar, spelling, or punctuation errors",
+            "true": "Grammatically correct with correct spelling and basic sentence punctuation",
+            "false": "Frequent grammar, spelling, or basic sentence punctuation errors relative to length",
         },
     },
-}
-
-
-ESSAY_SCORE_CRITERIA = [
-    "0: Incorrect — Off-topic or drifts off-topic, far below the required length, missing essay structure (no introduction, body, or conclusion), or pervasive grammar, spelling, or punctuation errors that obscure meaning.",
-    "1: Partially Correct — Stays on topic with a recognizable essay structure but misses part of the requirements (e.g. short length, weak or missing introduction/conclusion, thin argument) or has repeated grammar, spelling, or punctuation errors.",
-    "2: Correct — Fulfils the essay requirements (on the given topic, required length, introduction/body/conclusion with a coherent argument) and is grammatically correct with correct spelling (at most one minor typo).",
-]
-
-
-ESSAY_SCORE_QUESTION = {
-    "essay_score": {
-        "type": "score",
-        "instructions": """
-        Rate the overall quality of the Student Essay against the Essay Topic, Essay Requirements, and language correctness.
-        Judge topic match (no drifting off-topic), required word count / length, essay structure (introduction, body paragraphs, conclusion with a coherent argument), and grammar/spelling/punctuation together.
-        A single minor typo is still correct; repeated errors or errors that obscure meaning are not.
-        """,
-        "criteria": ESSAY_SCORE_CRITERIA,
-    }
 }
 
 
 ESSAY_SCORE_KEYS = ("meets_requirements", "grammatically_correct")
 
+# Weights for deriving the essay score from the two noul markers.
+ESSAY_GRAMMAR_WEIGHT = 0.4
+ESSAY_REQUIREMENTS_WEIGHT = 0.6
+
+
+def essay_score_from_checks(
+    meets_requirements: float, grammatically_correct: float
+) -> float:
+    """Derive the 0-2 essay score from the two noul markers (no extra jev call).
+
+    Weighted average of the markers remapped to the 0-2 range through the
+    dense_power curve (dense in the lower part of the range):
+    dense_score(grammatically_correct * 0.6 + meets_requirements * 0.4).
+    """
+    weighted = min((
+        grammatically_correct * ESSAY_GRAMMAR_WEIGHT
+        + meets_requirements * ESSAY_REQUIREMENTS_WEIGHT
+    )+0.1, 1)
+    return dense_score(weighted)
+
 
 def check_essay(
-    student_essay: str, topic: str, requirements: str = ""
+    student_essay: str, topic: str, max_points: float, requirements: str = ""
 ) -> dict[str, float]:
     """Score a student essay against its topic and requirements using the jev model.
 
     Args:
         student_essay: The student's essay text.
         topic: The assigned essay topic the essay must match.
+        max_points: Maximum points achievable for the essay.
         requirements: Additional essay requirements (e.g. word count,
             structure, style). May be an empty string if only the topic applies.
 
-    Returns a dict of probabilities (0 to 1) for each check:
-    meets_requirements, grammatically_correct.
+    Returns a dict with probabilities (0 to 1) for meets_requirements and
+    grammatically_correct, plus the derived essay_score on the 0-2 scale
+    and points_given (essay_score / 2 * max_points).
     """
     answers = ask_jev(
         build_essay_state(topic, requirements, student_essay),
         ESSAY_NOUL_QUESTIONS,
     )
-    # noul is a probability from 0 (no) to 1 (yes); choice and score carry the full distribution.
-    return {key: answers[key]["noul"] for key in ESSAY_SCORE_KEYS}
-
-
-def check_essay_score(
-    student_essay: str, topic: str, requirements: str = ""
-) -> float:
-    """Single-score variant: rate the essay on a 0-2 scale.
-
-    Returns one score: 0 (incorrect), 1 (partially correct), 2 (fully correct).
-    """
-    answers = ask_jev(
-        build_essay_state(topic, requirements, student_essay),
-        ESSAY_SCORE_QUESTION,
+    # noul is a probability from 0 (no) to 1 (yes).
+    checks = {key: answers[key]["noul"] for key in ESSAY_SCORE_KEYS}
+    essay_score = essay_score_from_checks(
+        checks["meets_requirements"], checks["grammatically_correct"]
     )
-    # noul is a probability from 0 (no) to 1 (yes); choice and score carry the full distribution.
-    return answers["essay_score"]["score"]
-
-
-def check_essay_full(
-    student_essay: str, topic: str, requirements: str = ""
-) -> dict[str, dict[str, float] | float]:
-    """Combined variant: two noul checks and the 0-2 score in a single request.
-
-    Returns {"checks": {meets_requirements, grammatically_correct},
-    "score": 0 (incorrect) to 2 (fully correct)}.
-    """
-    answers = ask_jev(
-        build_essay_state(topic, requirements, student_essay),
-        {**ESSAY_NOUL_QUESTIONS, **ESSAY_SCORE_QUESTION},
-    )
-    # noul is a probability from 0 (no) to 1 (yes); choice and score carry the full distribution.
     return {
-        "checks": {key: answers[key]["noul"] for key in ESSAY_SCORE_KEYS},
-        "score": answers["essay_score"]["score"],
+        **checks,
+        "essay_score": essay_score,
+        "points_given": essay_score * max_points,
     }

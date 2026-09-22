@@ -26,10 +26,10 @@ def create_app() -> FastAPI:
         description=(
             "Automated exam scoring backed by the jev scoring backend "
             "(via OpenRouter). One endpoint group per scoring domain: code, "
-            "essay, fact, pseudocode. Each domain exposes /check (raw criterion "
-            "scores in [0, 1]), /score (snapped point grade), and /full (both) "
-            "— except fact, which is score-only. "
-            "Every endpoint requires an X-API-Key header."
+            "essay, fact, pseudocode. Each domain exposes a single /check "
+            "endpoint returning per-criterion noul floats in [0, 1], the "
+            "derived 0-2 score (criteria joined with coefficients), and "
+            "points_given. Every endpoint requires an X-API-Key header."
         ),
         openapi_tags=[
             {
@@ -58,7 +58,7 @@ def create_app() -> FastAPI:
         allow_methods=["*"],
         allow_headers=["*"],
     )
-    # One endpoint per scoring feature (10 total).
+    # One check endpoint per scoring domain (4 total: code, essay, fact, pseudocode).
     app.include_router(code_router, prefix=settings.api_prefix)
     app.include_router(essay_router, prefix=settings.api_prefix)
     app.include_router(fact_router, prefix=settings.api_prefix)

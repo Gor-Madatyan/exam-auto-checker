@@ -1,19 +1,13 @@
 """Benchmark jev's code-checking on binary search submissions.
 
-Runs the strict code variants (check_code*) on Python submissions and the
-pseudocode variants (check_pseudocode*) on pseudocode submissions.
+Runs the check variants (check_code / check_pseudocode) on Python and
+pseudocode submissions. Each returns one noul float in [0, 1] per criterion
+plus the derived 0-2 score (criteria joined with coefficients).
 """
 
 import json
 
-from python_testing import (
-    check_code,
-    check_code_full,
-    check_code_score,
-    check_pseudocode,
-    check_pseudocode_full,
-    check_pseudocode_score,
-)
+from jev_exam_scoring import check_code, check_pseudocode
 
 QUESTION = "Write a binary search algorithm"
 
@@ -228,7 +222,7 @@ def run_benchmark(cases, reference, question, variants) -> dict:
         entry = {}
         for variant, fn in variants:
             try:
-                entry[variant] = fn(submission, reference, question)
+                entry[variant] = fn(submission, reference, question, 2.0)
             except Exception as exc:
                 entry[variant] = {"error": str(exc)}
         results[name] = entry
@@ -241,21 +235,13 @@ def main() -> None:
             CASES,
             CORRECT_REFERENCE,
             QUESTION,
-            (
-                ("noul", check_code),
-                ("score", check_code_score),
-                ("full", check_code_full),
-            ),
+            (("check", check_code),),
         ),
         "pseudocode": run_benchmark(
             PSEUDOCODE_CASES,
             PSEUDOCODE_REFERENCE,
             PSEUDOCODE_QUESTION,
-            (
-                ("noul", check_pseudocode),
-                ("score", check_pseudocode_score),
-                ("full", check_pseudocode_full),
-            ),
+            (("check", check_pseudocode),),
         ),
     }
     print(json.dumps(results, indent=2))

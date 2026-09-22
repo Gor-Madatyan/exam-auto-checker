@@ -55,20 +55,21 @@ def in_band(value: float, band: tuple[float, float]) -> bool:
 def main() -> None:
     print(f"Topic: {TOPIC}")
     print(f"Requirements: {REQUIREMENTS}\n")
-    print(f"{'case':<14} {'meets':<7} {'grammar':<8} verdict")
+    print(f"{'case':<14} {'meets':<7} {'grammar':<8} {'score':<6} verdict")
     print("-" * 60)
     for name, meets_band, grammar_band, submission in CASES:
         try:
-            result = check_essay(submission, TOPIC, REQUIREMENTS)
+            result = check_essay(submission, TOPIC, 2.0, REQUIREMENTS)
         except Exception as exc:
-            print(f"{name:<14} {'ERR':<7} {'ERR':<8} {exc}")
+            print(f"{name:<14} {'ERR':<7} {'ERR':<8} {'ERR':<6} {exc}")
             continue
         meets = result["meets_requirements"]
         grammar = result["grammatically_correct"]
+        score = result["essay_score"]
         ok = in_band(meets, meets_band) and in_band(grammar, grammar_band)
         verdict = "OK" if ok else "MISMATCH"
         print(
-            f"{name:<14} {meets:<7.2f} {grammar:<8.2f} {verdict} "
+            f"{name:<14} {meets:<7.2f} {grammar:<8.2f} {score:<6.2f} {verdict} "
             f"(expected meets{list(meets_band)} grammar{list(grammar_band)})"
         )
 

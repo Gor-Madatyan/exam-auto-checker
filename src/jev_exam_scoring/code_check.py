@@ -1,12 +1,4 @@
-
 from .util import *
-
-SCORE_CRITERIA = [
-    "0: Incorrect — Wrong algorithm (a fundamentally different approach than requested), a code path that produces no result (e.g., missing return), or errors that would crash or give wrong answers.",
-    "1: Partially Correct — The right algorithm with minor logic bugs (e.g., off-by-one) or incomplete edge case handling.",
-    "2: Correct — The algorithm is correct and complete and produces the right result for all inputs. Style, syntax, and implementation details may differ from the reference.",
-]
-
 
 NOUL_QUESTIONS = {
     "compiles_and_runs": {
@@ -36,70 +28,72 @@ NOUL_QUESTIONS = {
 }
 
 
-SCORE_QUESTION = {
-    "code_score": {
-        "type": "score",
-        "instructions": """
-        Compare the Student Answer against the Correct Answer and rate its functional correctness, including return values on every code path.
-        """,
-        "criteria": SCORE_CRITERIA,
-    }
-}
-
-
 SCORE_KEYS = ("compiles_and_runs", "correct_algorithm", "handles_edge_cases")
 
+# Weights for deriving the 0-2 code score from the three noul markers.
+# The algorithm itself dominates; syntax/returns and edge cases share the rest.
+CODE_COMPILES_WEIGHT = 0.2
+CODE_ALGORITHM_WEIGHT = 0.5
+CODE_EDGE_WEIGHT = 0.3
 
 
+def code_score_from_checks(
+    compiles_and_runs: float,
+    correct_algorithm: float,
+    handles_edge_cases: float,
+) -> float:
+    """Derive the 0-2 code score from the three noul markers (no extra jev call).
 
+    Weighted average of the markers remapped to the 0-2 range through the
+    dense_power curve (dense in the lower part of the range):
+    dense_score(compiles_and_runs * 0.2 + correct_algorithm * 0.5
+    + handles_edge_cases * 0.3).
 
+    Note the score is a quality signal, not a sole gate: a single failing
+    criterion should fail the submission even when the weighted score looks
+    middling (e.g. broken syntax with sound logic, or a wrong algorithm that
+    still handles edges). A reasonable rule: fail if ``compiles_and_runs < 0.5``
+    or ``correct_algorithm < 0.5``.
+    """
+    weighted = min((
+        compiles_and_runs * CODE_COMPILES_WEIGHT
+        + correct_algorithm * CODE_ALGORITHM_WEIGHT
+        + handles_edge_cases * CODE_EDGE_WEIGHT
+    ) + 0.1, 1)
+    return dense_score(weighted)
 
 
 def check_code(
-    student_code: str, correct_code: str, question_description: str
+    student_code: str,
+    correct_code: str,
+    question_description: str,
+    max_points: float,
 ) -> dict[str, float]:
     """Compare a student's code against a correct solution using the jev model.
 
-    Returns a dict of probabilities (0 to 1) for each check:
-    compiles_and_runs, correct_algorithm, handles_edge_cases.
+    Args:
+        student_code: The student's source code.
+        correct_code: The reference solution.
+        question_description: The task / problem statement.
+        max_points: Maximum points achievable for the task.
+
+    Returns a dict with probabilities (0 to 1) for compiles_and_runs,
+    correct_algorithm and handles_edge_cases, plus the derived code_score
+    on the 0-2 scale and points_given (code_score / 2 * max_points).
     """
     answers = ask_jev(
         build_state(question_description, correct_code, student_code),
         NOUL_QUESTIONS,
     )
-    # noul is a probability from 0 (no) to 1 (yes); choice and score carry the full distribution.
-    return {key: answers[key]["noul"] for key in SCORE_KEYS}
-
-
-def check_code_score(
-    student_code: str, correct_code: str, question_description: str
-) -> float:
-    """Single-score variant: rate the submission on a 0-2 scale.
-
-    Returns one score: 0 (incorrect), 1 (partially correct), 2 (fully correct).
-    """
-    answers = ask_jev(
-        build_state(question_description, correct_code, student_code),
-        SCORE_QUESTION,
+    # noul is a probability from 0 (no) to 1 (yes).
+    checks = {key: answers[key]["noul"] for key in SCORE_KEYS}
+    code_score = code_score_from_checks(
+        checks["compiles_and_runs"],
+        checks["correct_algorithm"],
+        checks["handles_edge_cases"],
     )
-    # noul is a probability from 0 (no) to 1 (yes); choice and score carry the full distribution.
-    return answers["code_score"]["score"]
-
-
-def check_code_full(
-    student_code: str, correct_code: str, question_description: str
-) -> dict[str, dict[str, float] | float]:
-    """Combined variant: three noul checks and the 0-2 score in a single request.
-
-    Returns {"checks": {compiles_and_runs, correct_algorithm, handles_edge_cases},
-    "score": 0 (incorrect) to 2 (fully correct)}.
-    """
-    answers = ask_jev(
-        build_state(question_description, correct_code, student_code),
-        {**NOUL_QUESTIONS, **SCORE_QUESTION},
-    )
-    # noul is a probability from 0 (no) to 1 (yes); choice and score carry the full distribution.
     return {
-        "checks": {key: answers[key]["noul"] for key in SCORE_KEYS},
-        "score": answers["code_score"]["score"],
+        **checks,
+        "code_score": code_score,
+        "points_given": code_score * max_points,
     }

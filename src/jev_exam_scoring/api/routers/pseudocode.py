@@ -1,24 +1,14 @@
-"""Pseudocode scoring endpoints (3 features)."""
+"""Pseudocode scoring endpoint (check only)."""
 
 from __future__ import annotations
 
 from functools import partial
-from typing import TYPE_CHECKING, cast
 
 from fastapi import APIRouter, Depends
 
 from .._helpers import ERROR_RESPONSES, call_jev
-from ..schemas import (
-    GradedScoreResponse,
-    PseudocodeCheckRequest,
-    PseudocodeChecks,
-    PseudocodeFullResponse,
-    PseudocodeScoreRequest,
-)
+from ..schemas import PseudocodeCheckRequest, PseudocodeChecks
 from ..security import verify_api_key
-
-if TYPE_CHECKING:
-    from ...grading import GradedScore
 
 router = APIRouter(
     prefix="/pseudocode",
@@ -31,9 +21,14 @@ router = APIRouter(
 @router.post(
     "/check",
     response_model=PseudocodeChecks,
-    summary="Pseudocode raw checks",
+    summary="Pseudocode checks + derived score",
     description="Score student pseudocode against a reference. Returns "
-    "clear_and_complete, correct_algorithm, handles_edge_cases floats in [0, 1].",
+    "per-criterion floats in [0, 1] (clear_and_complete, correct_algorithm, "
+    "handles_edge_cases) plus the derived pseudocode_score on the 0-2 scale "
+    "(clear_and_complete * 0.2 + correct_algorithm * 0.5 + handles_edge_cases "
+    "* 0.3, remapped to 0-2 through the dense_power curve) and points_given. "
+    "Fail the submission if "
+    "clear_and_complete < 0.5 or correct_algorithm < 0.5.",
 )
 async def check_pseudocode_endpoint(body: PseudocodeCheckRequest) -> PseudocodeChecks:
     from ... import check_pseudocode as _check_pseudocode
@@ -44,61 +39,7 @@ async def check_pseudocode_endpoint(body: PseudocodeCheckRequest) -> PseudocodeC
             student_pseudocode=body.student_pseudocode,
             correct_pseudocode=body.correct_pseudocode,
             question_description=body.question_description,
+            max_points=body.max_points,
         )
     )
     return PseudocodeChecks(**result)
-
-
-@router.post(
-    "/score",
-    response_model=GradedScoreResponse,
-    summary="Pseudocode score in points",
-    description="Grade student pseudocode directly to task points.",
-)
-async def check_pseudocode_score_endpoint(
-    body: PseudocodeScoreRequest,
-) -> GradedScoreResponse:
-    from ... import grade_pseudocode_score as _grade_pseudocode_score
-
-    graded = await call_jev(
-        partial(
-            _grade_pseudocode_score,
-            student_pseudocode=body.student_pseudocode,
-            correct_pseudocode=body.correct_pseudocode,
-            question_description=body.question_description,
-            max_points=body.max_points,
-            num_levels=body.num_levels,
-            mode=body.mode,
-        )
-    )
-    return GradedScoreResponse.from_graded(graded)
-
-
-@router.post(
-    "/full",
-    response_model=PseudocodeFullResponse,
-    summary="Pseudocode checks + points",
-    description="Pseudocode checks plus point grading in one call.",
-)
-async def check_pseudocode_full_endpoint(
-    body: PseudocodeScoreRequest,
-) -> PseudocodeFullResponse:
-    from ... import grade_pseudocode_full as _grade_pseudocode_full
-
-    result = await call_jev(
-        partial(
-            _grade_pseudocode_full,
-            student_pseudocode=body.student_pseudocode,
-            correct_pseudocode=body.correct_pseudocode,
-            question_description=body.question_description,
-            max_points=body.max_points,
-            num_levels=body.num_levels,
-            mode=body.mode,
-        )
-    )
-    return PseudocodeFullResponse(
-        checks=cast("dict[str, float]", result["checks"]),
-        grading=GradedScoreResponse.from_graded(
-            cast("GradedScore", result["grading"])
-        ),
-    )
