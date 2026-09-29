@@ -24,9 +24,10 @@ router = APIRouter(
     summary="Fact checks + derived score",
     description="Grade a factual answer against the correct answer. Returns "
     "per-criterion floats in [0, 1] (factually_correct, complete, "
-    "answers_question) plus the derived fact_score on the 0-2 scale "
-    "(factually_correct * 0.5 + complete * 0.3 + answers_question * 0.2, "
-    "remapped to 0-2 through the dense_power curve) and points_given.",
+    "answers_question) plus the derived fact_score on the 0-1 scale "
+    "(min(factually_correct * 0.5 + complete * 0.3 + answers_question * 0.2 "
+    "+ 0.1, 1.0), remapped to 0-1 through the dense_power curve) "
+    "and points_given (fact_score * max_points).",
 )
 async def check_fact_endpoint(body: FactCheckRequest) -> FactChecks:
     from ... import check_fact as _check_fact

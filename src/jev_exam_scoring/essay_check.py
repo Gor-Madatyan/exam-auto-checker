@@ -3,25 +3,34 @@ from .util import build_state
 
 
 def build_essay_state(topic: str, requirements: str, student_essay: str) -> str:
-    """Build the state prompt sent to jev for essay grading."""
-    return build_state(topic, requirements, student_essay,)
+    """Build the state JSON string sent to jev for essay grading.
+
+    Keys: `topic`, `requirements`, `student_essay`.
+    """
+    return build_state(
+        {
+            "topic": topic,
+            "requirements": requirements,
+            "student_essay": student_essay,
+        }
+    )
 
 
 ESSAY_NOUL_QUESTIONS = {
     "meets_requirements": {
         "type": "noul",
-        "instructions": "Does the student essay fulfil the essay requirements?",
+        "instructions": "Does `student_essay` fulfil `topic` and `requirements` (topic match, length, structure)? Judge content, topic, length, and structure only; ignore grammar, spelling, and style here.",
         "criteria": {
-            "true": "Meets topic and length requirements",
-            "false": "Off-topic or wrong length",
+            "true": "`student_essay` matches `topic` and meets the length and structure in `requirements`",
+            "false": "`student_essay` is off-topic vs `topic` or violates the length/structure in `requirements` (on-topic but too short still fails)",
         },
     },
     "grammatically_correct": {
         "type": "noul",
-        "instructions": "Is the essay grammatically correct?",
+        "instructions": "Is `student_essay` grammatically correct? Judge language mechanics only; ignore topic, content, and structure here.",
         "criteria": {
-            "true": "Grammatically correct with correct spelling and basic sentence punctuation",
-            "false": "Frequent grammar, spelling, or basic sentence punctuation errors relative to length",
+            "true": "`student_essay` is grammatically correct with correct spelling and basic sentence punctuation",
+            "false": "`student_essay` has frequent grammar, spelling, or basic sentence punctuation errors relative to length",
         },
     },
 }
@@ -37,11 +46,13 @@ ESSAY_REQUIREMENTS_WEIGHT = 0.6
 def essay_score_from_checks(
     meets_requirements: float, grammatically_correct: float
 ) -> float:
-    """Derive the 0-2 essay score from the two noul markers (no extra jev call).
+    """Derive the 0-1 essay score from the two noul markers (no extra jev call).
 
-    Weighted average of the markers remapped to the 0-2 range through the
-    dense_power curve (dense in the lower part of the range):
-    dense_score(grammatically_correct * 0.6 + meets_requirements * 0.4).
+    Weighted average of the markers, plus a +0.1 bonus capped at 1.0,
+    remapped to the 0-1 range through the dense_power curve (dense in the
+    lower part of the range):
+    dense_score(min(meets_requirements * 0.6 + grammatically_correct * 0.4
+    + 0.1, 1)).
     """
     weighted = min((
         grammatically_correct * ESSAY_GRAMMAR_WEIGHT
@@ -63,8 +74,8 @@ def check_essay(
             structure, style). May be an empty string if only the topic applies.
 
     Returns a dict with probabilities (0 to 1) for meets_requirements and
-    grammatically_correct, plus the derived essay_score on the 0-2 scale
-    and points_given (essay_score / 2 * max_points).
+    grammatically_correct, plus the derived essay_score on the 0-1 scale
+    and points_given (essay_score * max_points).
     """
     answers = ask_jev(
         build_essay_state(topic, requirements, student_essay),

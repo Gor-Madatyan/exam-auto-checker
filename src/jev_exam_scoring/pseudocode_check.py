@@ -6,26 +6,26 @@ from .util import *
 PSEUDOCODE_NOUL_QUESTIONS = {
     "clear_and_complete": {
         "type": "noul",
-        "instructions": "Is the pseudocode clear, complete, and does it describe a full algorithm with no missing steps?",
+        "instructions": "Is `student_pseudocode` clear, complete, and does it describe a full algorithm for `question_description` with no missing steps? Different wording, keywords, casing, or variable names are acceptable.",
         "criteria": {
-            "true": "Clear and complete",
-            "false": "Vague, incomplete, or missing steps",
+            "true": "`student_pseudocode` is clear and complete",
+            "false": "`student_pseudocode` is vague, incomplete, has key steps missing, or produces no result on some path (including a missing not-found result)",
         },
     },
     "correct_algorithm": {
         "type": "noul",
-        "instructions": "Does it implement the requested algorithm's logic correctly?",
+        "instructions": "Does `student_pseudocode` implement the algorithm requested in `question_description` correctly, when compared against `correct_pseudocode`? Judge the algorithm itself, not wording or structure.",
         "criteria": {
-            "true": "Correct algorithm design",
-            "false": "Wrong algorithm or logic",
+            "true": "`student_pseudocode` implements the correct algorithm design from `correct_pseudocode`",
+            "false": "`student_pseudocode` uses the wrong algorithm or logic vs `correct_pseudocode`",
         },
     },
     "handles_edge_cases": {
         "type": "noul",
-        "instructions": "Does it correctly handle boundary conditions and edge cases (e.g., empty input, single element, target not present, extreme values)?",
+        "instructions": "Does `student_pseudocode` correctly handle boundary conditions and edge cases for `question_description` (e.g., empty input, single element, target not present, extreme values)?",
         "criteria": {
-            "true": "Handles edge cases",
-            "false": "Fails on edge cases",
+            "true": "`student_pseudocode` handles edge cases",
+            "false": "`student_pseudocode` fails on edge cases",
         },
     },
 }
@@ -33,11 +33,27 @@ PSEUDOCODE_NOUL_QUESTIONS = {
 
 PSEUDOCODE_SCORE_KEYS = ("clear_and_complete", "correct_algorithm", "handles_edge_cases")
 
-# Weights for deriving the 0-2 pseudocode score from the three noul markers.
+# Weights for deriving the 0-1 pseudocode score from the three noul markers.
 # The algorithm itself dominates; clarity/completeness and edge cases share the rest.
 PSEUDOCODE_CLARITY_WEIGHT = 0.2
 PSEUDOCODE_ALGORITHM_WEIGHT = 0.5
 PSEUDOCODE_EDGE_WEIGHT = 0.3
+
+
+def build_pseudocode_state(
+    question_description: str, correct_pseudocode: str, student_pseudocode: str
+) -> str:
+    """Build the state JSON string sent to jev for pseudocode grading.
+
+    Keys: `question_description`, `correct_pseudocode`, `student_pseudocode`.
+    """
+    return build_state(
+        {
+            "question_description": question_description,
+            "correct_pseudocode": correct_pseudocode,
+            "student_pseudocode": student_pseudocode,
+        }
+    )
 
 
 def pseudocode_score_from_checks(
@@ -45,12 +61,13 @@ def pseudocode_score_from_checks(
     correct_algorithm: float,
     handles_edge_cases: float,
 ) -> float:
-    """Derive the 0-2 pseudocode score from the three noul markers (no extra jev call).
+    """Derive the 0-1 pseudocode score from the three noul markers (no extra jev call).
 
-    Weighted average of the markers remapped to the 0-2 range through the
-    dense_power curve (dense in the lower part of the range):
-    dense_score(clear_and_complete * 0.2 + correct_algorithm * 0.5
-    + handles_edge_cases * 0.3).
+    Weighted average of the markers, plus a +0.1 bonus capped at 1.0,
+    remapped to the 0-1 range through the dense_power curve (dense in the
+    lower part of the range):
+    dense_score(min(clear_and_complete * 0.2 + correct_algorithm * 0.5
+    + handles_edge_cases * 0.3 + 0.1, 1)).
 
     Note the score is a quality signal, not a sole gate: a single failing
     criterion should fail the submission even when the weighted score looks
@@ -85,11 +102,13 @@ def check_pseudocode(
 
     Returns a dict with probabilities (0 to 1) for clear_and_complete,
     correct_algorithm and handles_edge_cases, plus the derived
-    pseudocode_score on the 0-2 scale and points_given
-    (pseudocode_score / 2 * max_points).
+    pseudocode_score on the 0-1 scale and points_given
+    (pseudocode_score * max_points).
     """
     answers = ask_jev(
-        build_state(question_description, correct_pseudocode, student_pseudocode),
+        build_pseudocode_state(
+            question_description, correct_pseudocode, student_pseudocode
+        ),
         PSEUDOCODE_NOUL_QUESTIONS,
     )
     # noul is a probability from 0 (no) to 1 (yes).

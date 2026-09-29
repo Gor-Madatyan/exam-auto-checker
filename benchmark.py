@@ -2,7 +2,8 @@
 
 Runs the check variants (check_code / check_pseudocode) on Python and
 pseudocode submissions. Each returns one noul float in [0, 1] per criterion
-plus the derived 0-2 score (criteria joined with coefficients).
+plus the derived 0-1 score (weighted average plus +0.1 bonus capped at 1.0,
+criteria joined with coefficients).
 """
 
 import json

@@ -24,9 +24,10 @@ router = APIRouter(
     summary="Pseudocode checks + derived score",
     description="Score student pseudocode against a reference. Returns "
     "per-criterion floats in [0, 1] (clear_and_complete, correct_algorithm, "
-    "handles_edge_cases) plus the derived pseudocode_score on the 0-2 scale "
-    "(clear_and_complete * 0.2 + correct_algorithm * 0.5 + handles_edge_cases "
-    "* 0.3, remapped to 0-2 through the dense_power curve) and points_given. "
+    "handles_edge_cases) plus the derived pseudocode_score on the 0-1 scale "
+    "(min(clear_and_complete * 0.2 + correct_algorithm * 0.5 + handles_edge_cases "
+    "* 0.3 + 0.1, 1.0), remapped to 0-1 through the dense_power curve) "
+    "and points_given (pseudocode_score * max_points). "
     "Fail the submission if "
     "clear_and_complete < 0.5 or correct_algorithm < 0.5.",
 )

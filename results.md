@@ -1,5 +1,15 @@
 # jev Code-Checking Benchmark
 
+> **Scale note (implementation is source of truth):** the tables below record
+> historical runs against a 0–2 calibration of `dense_score`. The current
+> implementation (`dense_score = dense_power(...) / 100` in `util.py`) returns
+> scores on a **0–1 scale** — exactly half the tabulated values — computed as
+> `dense_score(min(weighted_avg + 0.1, 1.0))` with `points_given = score *
+> max_points`. To compare a historical score with current output, divide by 2
+> (e.g. historical `1.70` ≈ current `0.85`; the `1.0` "partially correct"
+> line ≈ current `0.5`; the `2.0` ceiling ≈ current `1.0`). `noul` values in
+> `[0, 1]`, weights, and the `< 0.5` fail-gates are unaffected by the rescale.
+
 Benchmark of the code-checking pattern against the **`~typesafe/jev-latest`** model (via OpenRouter) for grading student code submissions.
 
 - **Date:** 2026-09-21

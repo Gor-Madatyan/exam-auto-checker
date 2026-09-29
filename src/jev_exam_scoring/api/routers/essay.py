@@ -24,9 +24,10 @@ router = APIRouter(
     summary="Essay checks + derived score",
     description="Score a student essay against the topic and requirements. Returns "
     "meets_requirements and grammatically_correct floats in [0, 1] plus the "
-    "derived essay_score on the 0-2 scale "
-    "(grammatically_correct * 0.6 + meets_requirements * 0.4, remapped to 0-2 "
-    "through the dense_power curve) and points_given.",
+    "derived essay_score on the 0-1 scale "
+    "(min(meets_requirements * 0.6 + grammatically_correct * 0.4 + 0.1, 1.0), "
+    "remapped to 0-1 through the dense_power curve) "
+    "and points_given (essay_score * max_points).",
 )
 async def check_essay_endpoint(body: EssayCheckRequest) -> EssayChecks:
     from ... import check_essay as _check_essay

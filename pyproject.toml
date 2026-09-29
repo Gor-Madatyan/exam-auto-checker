@@ -21,3 +21,6 @@ serve = "jev_exam_scoring.api.serve:main"
 [build-system]
 requires = ["uv_build>=0.12.10,<0.13.0"]
 build-backend = "uv_build"
+
+[tool.ty.environment]
+python = ".venv/bin/python"

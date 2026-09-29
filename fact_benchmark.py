@@ -5,11 +5,12 @@ buried errors, extra incorrect claims, omissions, off-topic, and empty answers.
 
 check_fact returns one noul float in [0, 1] per criterion
 (factually_correct, complete, answers_question) plus the derived fact_score
-on the 0-2 scale (weighted average joined with coefficients). Each case is
+on the 0-1 scale (weighted average plus +0.1 bonus capped at 1.0, joined
+with coefficients). Each case is
 evaluated against a score band rather than an exact value:
-  - correct    -> [1.5, 2.0]
-  - partial    -> [0.5, 1.5)
-  - incorrect  -> [0.0, 0.5)
+  - correct    -> [0.75, 1.0]
+  - partial    -> [0.25, 0.75)
+  - incorrect  -> [0.0, 0.25)
 """
 
 from jev_exam_scoring.fact_check import check_fact
@@ -26,12 +27,12 @@ REFERENCE = (
 CASES = [
     (
         "correct_short",
-        (1.5, 2.0),
+        (0.75, 1.0),
         "DoS comes from one source; DDoS comes from many sources, often a botnet.",
     ),
     (
         "correct_long",
-        (1.5, 2.0),
+        (0.75, 1.0),
         "A Denial of Service (DoS) attack is an attempt to make a service unavailable "
         "by overwhelming it with traffic or requests. The key characteristic is that it "
         "originates from a single source system. A Distributed Denial of Service (DDoS) "
@@ -42,12 +43,12 @@ CASES = [
     ),
     (
         "incorrect_short",
-        (0.0, 0.5),
+        (0.0, 0.25),
         "DoS and DDoS are the same thing; both come from a single computer.",
     ),
     (
         "incorrect_long_buried",
-        (0.0, 0.5),
+        (0.0, 0.25),
         "A Denial of Service attack aims to make a service unavailable. A DoS attack "
         "originates from a single source, while a DDoS attack uses many distributed "
         "machines, often a botnet. One additional difference is that DoS attacks are "
@@ -55,34 +56,34 @@ CASES = [
     ),
     (
         "partial_minor",
-        (0.5, 1.5),
+        (0.25, 0.75),
         "DoS comes from one source. DDoS is similar but uses a few more computers.",
     ),
     (
         "extra_incorrect",
-        (0.0, 0.5),
+        (0.0, 0.25),
         "DoS is single-source and DDoS is distributed. DDoS attacks are always carried "
         "out by governments.",
     ),
     (
         "off_topic",
-        (0.0, 0.5),
+        (0.0, 0.25),
         "The difference between TCP and UDP is that TCP is connection-oriented while "
         "UDP is connectionless.",
     ),
     (
         "empty",
-        (0.0, 0.5),
+        (0.0, 0.25),
         "",
     ),
     (
         "important_omission",
-        (0.0, 0.5),
+        (0.0, 0.25),
         "DoS is a denial of service attack.",
     ),
     (
         "correct_long_thorough",
-        (1.5, 2.0),
+        (0.75, 1.0),
         "DoS and DDoS are both denial-of-service attacks that aim to disrupt a target "
         "service. The fundamental difference is the number of attacking sources. A DoS "
         "attack is launched from a single machine, so the defender can often mitigate it "

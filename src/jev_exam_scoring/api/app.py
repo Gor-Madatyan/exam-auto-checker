@@ -28,8 +28,9 @@ def create_app() -> FastAPI:
             "(via OpenRouter). One endpoint group per scoring domain: code, "
             "essay, fact, pseudocode. Each domain exposes a single /check "
             "endpoint returning per-criterion noul floats in [0, 1], the "
-            "derived 0-2 score (criteria joined with coefficients), and "
-            "points_given. Every endpoint requires an X-API-Key header."
+            "derived 0-1 score (weighted average plus +0.1 bonus capped at 1.0, "
+            "criteria joined with coefficients), and points_given "
+            "(score * max_points). Every endpoint requires an X-API-Key header."
         ),
         openapi_tags=[
             {

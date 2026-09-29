@@ -24,9 +24,10 @@ router = APIRouter(
     summary="Code checks + derived score",
     description="Score student source code against a reference solution. Returns "
     "per-criterion floats in [0, 1] (compiles_and_runs, correct_algorithm, "
-    "handles_edge_cases) plus the derived code_score on the 0-2 scale "
-    "(compiles_and_runs * 0.2 + correct_algorithm * 0.5 + handles_edge_cases "
-    "* 0.3, remapped to 0-2 through the dense_power curve) and points_given. "
+    "handles_edge_cases) plus the derived code_score on the 0-1 scale "
+    "(min(compiles_and_runs * 0.2 + correct_algorithm * 0.5 + handles_edge_cases "
+    "* 0.3 + 0.1, 1.0), remapped to 0-1 through the dense_power curve) "
+    "and points_given (code_score * max_points). "
     "Fail the submission if "
     "compiles_and_runs < 0.5 or correct_algorithm < 0.5.",
 )

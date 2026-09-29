@@ -12,7 +12,7 @@ except ImportError:
     pass
 
 API_URL = "https://openrouter.ai/api/alpha/decisions"
-MODEL = "~typesafe/jev-latest"
+MODEL = "upstage/solar-decide"
 API_KEY = os.getenv("OPENROUTER_API_KEY")
 if not API_KEY:
     raise RuntimeError(
@@ -20,29 +20,14 @@ if not API_KEY:
     )
 
 
-def build_state(
-    question_description: str,
-    correct_code: str,
-    student_code: str,
-    rules: str = "",
-) -> str:
-    """Build the state prompt sent to jev."""
-    state = f"""
-Question / Problem Statement:
-{question_description}
+def build_state(state: dict) -> str:
+    """Build the state JSON string sent to jev.
 
-Correct Reference Answer:
-{correct_code}
-
-Student Submission:
-{student_code}
-"""
-    if rules:
-        state += f"""
-Scoring Rules:
-{rules}
-"""
-    return state
+    Takes a flat dict of named fields (e.g. ``{"question_description": ...}``)
+    and returns it as a JSON string. Instructions and criteria reference
+    individual fields with backticks: `field` for top-level values.
+    """
+    return json.dumps(state, ensure_ascii=False)
 
 
 def ask_jev(state: str, questions: dict) -> dict:
@@ -75,11 +60,11 @@ def dense_power(x: float, gamma: float = 0.38) -> float:
 
 
 def dense_score(weighted: float) -> float:
-    """Map a 0-1 weighted noul average to the 0-2 score scale.
+    """Map a 0-1 weighted noul average to the 0-1 score scale.
 
     Remaps through the dense_power curve, which is dense in the lower part
     of the range (gamma < 1 lifts middling averages while keeping the
-    endpoints exact): 0 -> 0.0, 0.5 -> ~1.58, 1 -> 2.0.
+    endpoints exact): 0 -> 0.0, 0.5 -> ~0.77, 1 -> 1.0.
     """
     return dense_power(weighted * 100.0) / 100
 

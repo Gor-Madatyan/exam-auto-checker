@@ -2,9 +2,10 @@
 
 Every domain follows the same pattern: the check endpoint takes the
 submission plus ``max_points`` and returns per-criterion noul floats in
-[0, 1], the derived ``*_score`` on the 0-2 scale (weighted average of the
-criteria, joined with coefficients), and ``points_given``
-(score / 2 * max_points).
+[0, 1], the derived ``*_score`` on the 0-1 scale (weighted average of the
+criteria plus a +0.1 bonus capped at 1.0, joined with coefficients and
+remapped through the dense_power curve), and ``points_given``
+(score * max_points).
 """
 
 from __future__ import annotations
