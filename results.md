@@ -16,70 +16,70 @@ Benchmark of the code-checking pattern against the **`~typesafe/jev-latest`** mo
 
 ## Test Cases
 
-| Case | Description | Expected |
-|------|-------------|----------|
-| `correct_recursive` | Correct recursive binary search | all checks ≈ 1 |
-| `correct_iterative` | Correct iterative binary search | all checks ≈ 1 |
-| `off_by_one` | `while low < high` — misses `low == high` | algorithm / edge cases low |
-| `linear_search` | Linear scan instead of binary search | algorithm low |
-| `syntax_error` | Missing colon after `while` | compiles low |
-| `missing_return` | No `return -1` when target not found | compiles low |
+| Case                | Description                               | Expected                   |
+| ------------------- | ----------------------------------------- | -------------------------- |
+| `correct_recursive` | Correct recursive binary search           | all checks ≈ 1             |
+| `correct_iterative` | Correct iterative binary search           | all checks ≈ 1             |
+| `off_by_one`        | `while low < high` — misses `low == high` | algorithm / edge cases low |
+| `linear_search`     | Linear scan instead of binary search      | algorithm low              |
+| `syntax_error`      | Missing colon after `while`               | compiles low               |
+| `missing_return`    | No `return -1` when target not found      | compiles low               |
 
 ## Results — 3 × noul (`check_code`)
 
-| Case | compiles_and_runs | correct_algorithm | handles_edge_cases |
-|------|------------------:|------------------:|-------------------:|
-| correct_recursive | 0.97 | 0.97 | 0.91 |
-| correct_iterative | 0.98 | 0.99 | 0.94 |
-| off_by_one | 0.95 | 0.37 | 0.51 |
-| linear_search | 0.97 | 0.01 | 0.72 |
-| syntax_error | 0.03 | 0.87 | 0.73 |
-| missing_return | 0.19 | 0.88 | 0.49 |
+| Case              | compiles_and_runs | correct_algorithm | handles_edge_cases |
+| ----------------- | ----------------: | ----------------: | -----------------: |
+| correct_recursive |              0.97 |              0.97 |               0.91 |
+| correct_iterative |              0.98 |              0.99 |               0.94 |
+| off_by_one        |              0.95 |              0.37 |               0.51 |
+| linear_search     |              0.97 |              0.01 |               0.72 |
+| syntax_error      |              0.03 |              0.87 |               0.73 |
+| missing_return    |              0.19 |              0.88 |               0.49 |
 
 ## Results — single score (`check_code_score`)
 
-| Case | score (0–2) |
-|------|------------:|
-| correct_recursive | 1.70 |
-| correct_iterative | 1.70 |
-| off_by_one | 1.22 |
-| linear_search | 0.31 |
-| syntax_error | 0.15 |
-| missing_return | 0.83 |
+| Case              | score (0–2) |
+| ----------------- | ----------: |
+| correct_recursive |        1.70 |
+| correct_iterative |        1.70 |
+| off_by_one        |        1.22 |
+| linear_search     |        0.31 |
+| syntax_error      |        0.15 |
+| missing_return    |        0.83 |
 
 ## Results — combined (`check_code_full`)
 
-| Case | compiles_and_runs | correct_algorithm | handles_edge_cases | score |
-|------|------------------:|------------------:|-------------------:|------:|
-| correct_recursive | 0.97 | 0.97 | 0.91 | 1.70 |
-| correct_iterative | 0.98 | 0.99 | 0.94 | 1.69 |
-| off_by_one | 0.96 | 0.36 | 0.47 | 1.16 |
-| linear_search | 0.97 | 0.01 | 0.71 | 0.35 |
-| syntax_error | 0.03 | 0.87 | 0.70 | 0.14 |
-| missing_return | 0.16 | 0.89 | 0.43 | 0.87 |
+| Case              | compiles_and_runs | correct_algorithm | handles_edge_cases | score |
+| ----------------- | ----------------: | ----------------: | -----------------: | ----: |
+| correct_recursive |              0.97 |              0.97 |               0.91 |  1.70 |
+| correct_iterative |              0.98 |              0.99 |               0.94 |  1.69 |
+| off_by_one        |              0.96 |              0.36 |               0.47 |  1.16 |
+| linear_search     |              0.97 |              0.01 |               0.71 |  0.35 |
+| syntax_error      |              0.03 |              0.87 |               0.70 |  0.14 |
+| missing_return    |              0.16 |              0.89 |               0.43 |  0.87 |
 
 ## Combined vs. separate calls
 
-| Case | noul (compiles / alg / edge) | full (compiles / alg / edge) | score | full score |
-|------|------------------------------|------------------------------|------:|-----------:|
-| correct_recursive | 0.97 / 0.97 / 0.91 | 0.97 / 0.97 / 0.91 | 1.70 | 1.70 |
-| correct_iterative | 0.98 / 0.99 / 0.94 | 0.98 / 0.99 / 0.94 | 1.70 | 1.69 |
-| off_by_one | 0.95 / 0.37 / 0.51 | 0.96 / 0.36 / 0.47 | 1.22 | 1.16 |
-| linear_search | 0.97 / 0.01 / 0.72 | 0.97 / 0.01 / 0.71 | 0.31 | 0.35 |
-| syntax_error | 0.03 / 0.87 / 0.73 | 0.03 / 0.87 / 0.70 | 0.15 | 0.14 |
-| missing_return | 0.19 / 0.88 / 0.49 | 0.16 / 0.89 / 0.43 | 0.83 | 0.87 |
+| Case              | noul (compiles / alg / edge) | full (compiles / alg / edge) | score | full score |
+| ----------------- | ---------------------------- | ---------------------------- | ----: | ---------: |
+| correct_recursive | 0.97 / 0.97 / 0.91           | 0.97 / 0.97 / 0.91           |  1.70 |       1.70 |
+| correct_iterative | 0.98 / 0.99 / 0.94           | 0.98 / 0.99 / 0.94           |  1.70 |       1.69 |
+| off_by_one        | 0.95 / 0.37 / 0.51           | 0.96 / 0.36 / 0.47           |  1.22 |       1.16 |
+| linear_search     | 0.97 / 0.01 / 0.72           | 0.97 / 0.01 / 0.71           |  0.31 |       0.35 |
+| syntax_error      | 0.03 / 0.87 / 0.73           | 0.03 / 0.87 / 0.70           |  0.15 |       0.14 |
+| missing_return    | 0.19 / 0.88 / 0.49           | 0.16 / 0.89 / 0.43           |  0.83 |       0.87 |
 
 Asking all four questions in one request produces the same answers as separate calls — every difference is within run-to-run noise (≤ 0.05). No cross-contamination between the noul and score questions.
 
 ## Prompt fix: before / after
 
-| Case | check | v1 (before) | v2 (after) |
-|------|-------|------------:|-----------:|
-| missing_return | compiles_and_runs | 0.50 | **0.19** |
-| missing_return | handles_edge_cases | 0.58 | 0.48 |
-| missing_return | score | 0.98 | **0.85** |
-| correct_recursive | compiles_and_runs | 0.98 | 0.97 |
-| correct_iterative | compiles_and_runs | 0.99 | 0.98 |
+| Case              | check              | v1 (before) | v2 (after) |
+| ----------------- | ------------------ | ----------: | ---------: |
+| missing_return    | compiles_and_runs  |        0.50 |   **0.19** |
+| missing_return    | handles_edge_cases |        0.58 |       0.48 |
+| missing_return    | score              |        0.98 |   **0.85** |
+| correct_recursive | compiles_and_runs  |        0.98 |       0.97 |
+| correct_iterative | compiles_and_runs  |        0.99 |       0.98 |
 
 The fix moved `missing_return` from "borderline" to "clearly flagged" on `compiles_and_runs` (0.50 → 0.19) and pushed the single score below 1.0 (0.98 → 0.85), while correct submissions stayed at ≥ 0.97 on every check — no regressions.
 
@@ -95,11 +95,11 @@ The fix moved `missing_return` from "borderline" to "clearly flagged" on `compil
 
 - `missing_return` is improved but still the softest failure: score 0.83–0.87 (below "partially correct" now, but far from the 0.14–0.35 of other failures) and `correct_algorithm = 0.88–0.89` — the model still judges the algorithm logic as sound and only partially penalizes the missing return. The noul `compiles_and_runs = 0.16–0.19` is the decisive signal.
 - The score variant remains conservative on correct code: 1.69–1.70 / 2.0, never a clean 2.
-- `syntax_error` still scores `correct_algorithm = 0.87` — the model evaluates logic independently of syntax, which is by design but means a single score hides *why* a submission failed.
+- `syntax_error` still scores `correct_algorithm = 0.87` — the model evaluates logic independently of syntax, which is by design but means a single score hides _why_ a submission failed.
 
 **Combined request verdict**
 
-- `check_code_full()` is the best of both worlds at no quality cost: one API call returns the diagnostic noul signals *and* the compact score, with results indistinguishable from two separate calls. Use it as the default.
+- `check_code_full()` is the best of both worlds at no quality cost: one API call returns the diagnostic noul signals _and_ the compact score, with results indistinguishable from two separate calls. Use it as the default.
 - The combined call costs the same tokens as the separate noul call (4 questions vs. 3) and saves a whole round trip compared to calling both separately.
 
 **Recommendation**
@@ -121,43 +121,43 @@ Same binary-search question, but submissions are **pseudocode** and graded with 
 
 ## Test Cases
 
-| Case | Description | Expected |
-|------|-------------|----------|
+| Case                      | Description                                                                                              | Expected                                                  |
+| ------------------------- | -------------------------------------------------------------------------------------------------------- | --------------------------------------------------------- |
 | `correct_different_style` | Correct algorithm, very different style (uppercase keywords, `LENGTH`/`FLOOR`, different variable names) | all checks ≈ 1 — the critical case for "no strict syntax" |
-| `off_by_one` | `while low < high` — misses `low == high` | algorithm / edge cases low |
-| `linear_search` | Linear scan instead of binary search | algorithm low |
-| `missing_not_found` | No `-1` returned when target not found | clear / edge cases low |
-| `vague_incomplete` | Describes the goal but omits the halving steps | all checks low |
+| `off_by_one`              | `while low < high` — misses `low == high`                                                                | algorithm / edge cases low                                |
+| `linear_search`           | Linear scan instead of binary search                                                                     | algorithm low                                             |
+| `missing_not_found`       | No `-1` returned when target not found                                                                   | clear / edge cases low                                    |
+| `vague_incomplete`        | Describes the goal but omits the halving steps                                                           | all checks low                                            |
 
 ## Results — 3 × noul (`check_pseudocode`)
 
-| Case | clear_and_complete | correct_algorithm | handles_edge_cases |
-|------|-------------------:|------------------:|-------------------:|
-| correct_different_style | 0.98 | 0.99 | 0.92 |
-| off_by_one | 0.62 | 0.38 | 0.50 |
-| linear_search | 0.59 | 0.02 | 0.78 |
-| missing_not_found | 0.52 | 0.97 | 0.53 |
-| vague_incomplete | 0.06 | 0.10 | 0.49 |
+| Case                    | clear_and_complete | correct_algorithm | handles_edge_cases |
+| ----------------------- | -----------------: | ----------------: | -----------------: |
+| correct_different_style |               0.98 |              0.99 |               0.92 |
+| off_by_one              |               0.62 |              0.38 |               0.50 |
+| linear_search           |               0.59 |              0.02 |               0.78 |
+| missing_not_found       |               0.52 |              0.97 |               0.53 |
+| vague_incomplete        |               0.06 |              0.10 |               0.49 |
 
 ## Results — single score (`check_pseudocode_score`)
 
-| Case | score (0–2) |
-|------|------------:|
-| correct_different_style | 1.64 |
-| off_by_one | 1.04 |
-| linear_search | 0.58 |
-| missing_not_found | 1.16 |
-| vague_incomplete | 0.03 |
+| Case                    | score (0–2) |
+| ----------------------- | ----------: |
+| correct_different_style |        1.64 |
+| off_by_one              |        1.04 |
+| linear_search           |        0.58 |
+| missing_not_found       |        1.16 |
+| vague_incomplete        |        0.03 |
 
 ## Results — combined (`check_pseudocode_full`)
 
-| Case | clear_and_complete | correct_algorithm | handles_edge_cases | score |
-|------|-------------------:|------------------:|-------------------:|------:|
-| correct_different_style | 0.98 | 0.99 | 0.92 | 1.64 |
-| off_by_one | 0.64 | 0.36 | 0.42 | 1.01 |
-| linear_search | 0.62 | 0.02 | 0.78 | 0.54 |
-| missing_not_found | 0.48 | 0.95 | 0.47 | 1.15 |
-| vague_incomplete | 0.06 | 0.09 | 0.48 | 0.02 |
+| Case                    | clear_and_complete | correct_algorithm | handles_edge_cases | score |
+| ----------------------- | -----------------: | ----------------: | -----------------: | ----: |
+| correct_different_style |               0.98 |              0.99 |               0.92 |  1.64 |
+| off_by_one              |               0.64 |              0.36 |               0.42 |  1.01 |
+| linear_search           |               0.62 |              0.02 |               0.78 |  0.54 |
+| missing_not_found       |               0.48 |              0.95 |               0.47 |  1.15 |
+| vague_incomplete        |               0.06 |              0.09 |               0.48 |  0.02 |
 
 ## Analysis
 
@@ -194,24 +194,24 @@ After the v2 runs, the score criteria were recalibrated to fix two calibration e
 
 ## Before / after — code scores
 
-| Case | v2 | v3 | Δ |
-|------|----:|----:|---:|
-| correct_recursive | 1.71 | 1.67 | −0.04 (noise) |
-| correct_iterative | 1.69 | 1.66 | −0.03 (noise) |
-| off_by_one | 1.19 | 1.12 | −0.07 (noise) |
-| linear_search | 0.30 | **0.05** | −0.25 ✓ |
-| syntax_error | 0.14 | 0.34 | +0.20 ⚠ |
-| missing_return | 0.84 | **0.37** | −0.47 ✓✓ |
+| Case              |   v2 |       v3 |             Δ |
+| ----------------- | ---: | -------: | ------------: |
+| correct_recursive | 1.71 |     1.67 | −0.04 (noise) |
+| correct_iterative | 1.69 |     1.66 | −0.03 (noise) |
+| off_by_one        | 1.19 |     1.12 | −0.07 (noise) |
+| linear_search     | 0.30 | **0.05** |       −0.25 ✓ |
+| syntax_error      | 0.14 |     0.34 |       +0.20 ⚠ |
+| missing_return    | 0.84 | **0.37** |      −0.47 ✓✓ |
 
 ## Before / after — pseudocode scores
 
-| Case | v2 | v3 | Δ |
-|------|----:|----:|---:|
-| correct_different_style | 1.64 | 1.63 | −0.01 (noise) |
-| off_by_one | 1.04 | 1.13 | +0.09 (noise) |
-| linear_search | 0.58 | **0.21** | −0.37 ✓ |
-| missing_not_found | 1.16 | **0.66** | −0.50 ✓✓ |
-| vague_incomplete | 0.03 | 0.03 | 0 |
+| Case                    |   v2 |       v3 |             Δ |
+| ----------------------- | ---: | -------: | ------------: |
+| correct_different_style | 1.64 |     1.63 | −0.01 (noise) |
+| off_by_one              | 1.04 |     1.13 | +0.09 (noise) |
+| linear_search           | 0.58 | **0.21** |       −0.37 ✓ |
+| missing_not_found       | 1.16 | **0.66** |      −0.50 ✓✓ |
+| vague_incomplete        | 0.03 |     0.03 |             0 |
 
 ## Analysis
 

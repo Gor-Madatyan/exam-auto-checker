@@ -11,7 +11,7 @@ paths:
   /api/v1/code/check:
     post:
       tags:
-      - code
+        - code
       summary: Code checks + derived score
       description: Score student source code against a reference solution. Returns
         per-criterion floats in [0, 1] (compiles_and_runs, correct_algorithm, handles_edge_cases)
@@ -46,11 +46,11 @@ paths:
               schema:
                 $ref: '#/components/schemas/HTTPValidationError'
       security:
-      - APIKeyHeader: []
+        - APIKeyHeader: []
   /api/v1/essay/check:
     post:
       tags:
-      - essay
+        - essay
       summary: Essay checks + derived score
       description: Score a student essay against the topic and requirements. Returns
         meets_requirements and grammatically_correct floats in [0, 1] plus the derived
@@ -83,11 +83,11 @@ paths:
               schema:
                 $ref: '#/components/schemas/HTTPValidationError'
       security:
-      - APIKeyHeader: []
+        - APIKeyHeader: []
   /api/v1/fact/check:
     post:
       tags:
-      - fact
+        - fact
       summary: Fact checks + derived score
       description: Grade a factual answer against the correct answer. Returns per-criterion
         floats in [0, 1] (factually_correct, complete, answers_question) plus the
@@ -121,11 +121,11 @@ paths:
               schema:
                 $ref: '#/components/schemas/HTTPValidationError'
       security:
-      - APIKeyHeader: []
+        - APIKeyHeader: []
   /api/v1/pseudocode/check:
     post:
       tags:
-      - pseudocode
+        - pseudocode
       summary: Pseudocode checks + derived score
       description: Score student pseudocode against a reference. Returns per-criterion
         floats in [0, 1] (clear_and_complete, correct_algorithm, handles_edge_cases)
@@ -160,7 +160,7 @@ paths:
               schema:
                 $ref: '#/components/schemas/HTTPValidationError'
       security:
-      - APIKeyHeader: []
+        - APIKeyHeader: []
 components:
   schemas:
     CodeCheckRequest:
@@ -183,10 +183,10 @@ components:
           title: Max Points
       type: object
       required:
-      - student_code
-      - correct_code
-      - question_description
-      - max_points
+        - student_code
+        - correct_code
+        - question_description
+        - max_points
       title: CodeCheckRequest
     CodeChecks:
       properties:
@@ -216,11 +216,11 @@ components:
           title: Points Given
       type: object
       required:
-      - compiles_and_runs
-      - correct_algorithm
-      - handles_edge_cases
-      - code_score
-      - points_given
+        - compiles_and_runs
+        - correct_algorithm
+        - handles_edge_cases
+        - code_score
+        - points_given
       title: CodeChecks
     EssayCheckRequest:
       properties:
@@ -242,9 +242,9 @@ components:
           title: Max Points
       type: object
       required:
-      - student_essay
-      - topic
-      - max_points
+        - student_essay
+        - topic
+        - max_points
       title: EssayCheckRequest
     EssayChecks:
       properties:
@@ -269,10 +269,10 @@ components:
           title: Points Given
       type: object
       required:
-      - meets_requirements
-      - grammatically_correct
-      - essay_score
-      - points_given
+        - meets_requirements
+        - grammatically_correct
+        - essay_score
+        - points_given
       title: EssayChecks
     FactCheckRequest:
       properties:
@@ -294,10 +294,10 @@ components:
           title: Max Points
       type: object
       required:
-      - student_answer
-      - correct_answer
-      - question_description
-      - max_points
+        - student_answer
+        - correct_answer
+        - question_description
+        - max_points
       title: FactCheckRequest
     FactChecks:
       properties:
@@ -327,11 +327,11 @@ components:
           title: Points Given
       type: object
       required:
-      - factually_correct
-      - complete
-      - answers_question
-      - fact_score
-      - points_given
+        - factually_correct
+        - complete
+        - answers_question
+        - fact_score
+        - points_given
       title: FactChecks
     HTTPValidationError:
       properties:
@@ -362,10 +362,10 @@ components:
           title: Max Points
       type: object
       required:
-      - student_pseudocode
-      - correct_pseudocode
-      - question_description
-      - max_points
+        - student_pseudocode
+        - correct_pseudocode
+        - question_description
+        - max_points
       title: PseudocodeCheckRequest
     PseudocodeChecks:
       properties:
@@ -395,19 +395,19 @@ components:
           title: Points Given
       type: object
       required:
-      - clear_and_complete
-      - correct_algorithm
-      - handles_edge_cases
-      - pseudocode_score
-      - points_given
+        - clear_and_complete
+        - correct_algorithm
+        - handles_edge_cases
+        - pseudocode_score
+        - points_given
       title: PseudocodeChecks
     ValidationError:
       properties:
         loc:
           items:
             anyOf:
-            - type: string
-            - type: integer
+              - type: string
+              - type: integer
           type: array
           title: Location
         msg:
@@ -423,9 +423,9 @@ components:
           title: Context
       type: object
       required:
-      - loc
-      - msg
-      - type
+        - loc
+        - msg
+        - type
       title: ValidationError
   securitySchemes:
     APIKeyHeader:
@@ -434,11 +434,11 @@ components:
       in: header
       name: X-API-Key
 tags:
-- name: code
-  description: Source-code answer scoring (compiles/runs, algorithm, edge cases).
-- name: essay
-  description: Free-text essay scoring (requirements, grammar).
-- name: fact
-  description: Short factual-answer scoring, graded directly to points.
-- name: pseudocode
-  description: Pseudocode answer scoring (clarity, algorithm, edge cases).
+  - name: code
+    description: Source-code answer scoring (compiles/runs, algorithm, edge cases).
+  - name: essay
+    description: Free-text essay scoring (requirements, grammar).
+  - name: fact
+    description: Short factual-answer scoring, graded directly to points.
+  - name: pseudocode
+    description: Pseudocode answer scoring (clarity, algorithm, edge cases).
